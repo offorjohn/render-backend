@@ -7,20 +7,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Simple POST endpoint to submit data
+// POST endpoint that accepts any JSON payload
 app.post('/submit-data', (req, res) => {
-  const { firstName, lastName, address, city, country, phoneNumber } = req.body;
+  const data = req.body;
   
-  // Validate input fields
-  if (!firstName || !lastName || !address || !city || !country || !phoneNumber) {
-    return res.status(400).json({ error: 'All fields are required.' });
-  }
+  // Log the received JSON data to the console
+  console.log('Received JSON:', data);
   
   // Normally, here you would insert data into a database.
   // For this simple example, we simply echo back the received data.
   res.status(201).json({ 
     message: 'Data successfully received',
-    data: { firstName, lastName, address, city, country, phoneNumber }
+    data: data
   });
 });
 
