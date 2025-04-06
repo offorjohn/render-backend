@@ -11,12 +11,24 @@ app.post('/submit-data', async (req, res) => {
   const users = req.body;
   console.log('Received JSON from client:', users);
 
+  // Replace with your actual token or retrieve from environment/config
+  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2NiODNiZDFmOTI1YTYwNGUyZmQ2YjIiLCJpYXQiOjE3NDM5ODI5NzEsImV4cCI6MTc0Mzk4NjU3MX0.Krq3PEGgF4tPXG6zUNHFcg57VaGocB-lKe0V8pX0AjM';
+
   try {
     console.log('Sending QR data to scan endpoint...');
-    // Fetch scanned QR data from your Vercel endpoint
-    const scanRes = await axios.post('https://software-invite-api-self.vercel.app/guest/scan-qrcode/', {
-      qrData: users[0]?.qrCode || '' // fallback, or adjust if needed
-    });
+    // Fetch scanned QR data from your Vercel endpoint with Bearer token in headers
+    const scanRes = await axios.post(
+      'https://software-invite-api-self.vercel.app/guest/scan-qrcode/',
+      {
+        qrData: users[0]?.qrCode || '' // fallback, or adjust if needed
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
     console.log('Received response from scan endpoint:', scanRes.data);
 
     const scanned = scanRes.data?.results || [];
