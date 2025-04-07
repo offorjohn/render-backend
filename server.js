@@ -82,11 +82,23 @@ app.post('/submit-data', (req, res) => {
 
 app.post('/submit-dat', (req, res) => {
   const data = req.body;
-  
+
+  // Check if the data contains unique IDs
+  const uniqueIds = new Set();
+  const filteredData = data.filter(item => {
+    if (uniqueIds.has(item.id)) {
+      return false; // Skip if the ID already exists
+    }
+    uniqueIds.add(item.id);
+    return true;
+  });
+
   // Assuming data is an array of objects and your table has columns that match the keys
   const query = `INSERT INTO users (id, _id, name, email, phone, createdAt, status, qrCode)
-                 VALUES ?`;
-  const values = data.map(item => [
+                 VALUES ?
+                 ON DUPLICATE KEY UPDATE name = VALUES(name), email = VALUES(email), phone = VALUES(phone), createdAt = VALUES(createdAt), status = VALUES(status), qrCode = VALUES(qrCode)`;
+
+  const values = filteredData.map(item => [
     item.id,
     item._id,
     item.name,
@@ -96,7 +108,7 @@ app.post('/submit-dat', (req, res) => {
     item.status,
     item.qrCode
   ]);
-  
+
   connection.query(query, [values], (err, results) => {
     if (err) {
       console.error("Error inserting data:", err);
