@@ -51,7 +51,9 @@ connection.connect(err => {
   } else {
     console.log("Connected to MySQL database!");
   }
-});app.post('/submit-data', (req, res) => {
+});
+
+app.post('/submit-data', (req, res) => {
   const data = req.body;
   
   // Log the received JSON data to the console
@@ -76,6 +78,43 @@ connection.connect(err => {
     });
   });
 });
+
+
+// Example: Securely fetch data (ensure you add proper authentication in a real-world scenario)
+app.get('/view-data', (req, res) => {
+  connection.query('SELECT * FROM users', (err, results) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
+    res.status(200).json({ data: results });
+  });
+});
+app.post('/submit-data', (req, res) => {
+  const data = req.body;
+  console.log('Received JSON:', data);
+
+  // Ensure we are inserting each object individually
+  data.forEach((item) => {
+    const jsonData = JSON.stringify(item); // Convert each object to a JSON string
+
+    const insertQuery = 'INSERT INTO submissions (data) VALUES (?)';
+    connection.query(insertQuery, [jsonData], (err, results) => {
+      if (err) {
+        console.error("Error inserting data into database:", err);
+        return res.status(500).json({ message: 'Failed to save data', error: err });
+      }
+
+      console.log("Data inserted successfully with ID:", results.insertId);
+    });
+  });
+
+  res.status(201).json({ 
+    message: 'Data successfully received and saved',
+    data: data
+  });
+});
+
 // Route to delete all submissions from the database
 app.delete('/delete-all-submissions', (req, res) => {
   const query = 'DELETE FROM submissions';
