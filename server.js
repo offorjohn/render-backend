@@ -53,6 +53,8 @@ connection.connect(err => {
     console.log("Connected to MySQL database!");
   }
 });
+
+
 app.post('/submit-dat', (req, res) => {
   const data = req.body;
   console.log(data);
@@ -130,6 +132,24 @@ app.post('/submit-data', (req, res) => {
   });
 });
 
+// Route to delete all users from the database
+app.delete('/delete-all-users', (req, res) => {
+  const query = 'DELETE FROM users';
+
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error('Error deleting all users from database:', err);
+      return res.status(500).json({ message: 'Failed to delete users', error: err });
+    }
+
+    res.status(200).json({
+      message: 'All users successfully deleted',
+      affectedRows: results.affectedRows
+    });
+  });
+});
+
+
 // Route to delete all submissions from the database
 app.delete('/delete-all-submissions', (req, res) => {
   const query = 'DELETE FROM submissions';
@@ -163,6 +183,18 @@ app.get('/get-submissions', (req, res) => {
       message: 'Data fetched successfully',
       submissions: results
     });
+  });
+});
+
+
+// Example: Securely fetch data (ensure you add proper authentication in a real-world scenario)
+app.get('/view-data', (req, res) => {
+  connection.query('SELECT * FROM users', (err, results) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
+    res.status(200).json({ data: results });
   });
 });
 
