@@ -55,73 +55,67 @@ connection.connect(err => {
     console.log("Connected to MySQL database!");
   }
 });
-
-
-
 app.post('/submit-data', async (req, res) => {
-  const users = req.body;
-  console.log('Received JSON from client:', users);
+  // Expecting the scan result JSON with a "results" array
+  const { results } = req.body;
+  if (!results || !results.length) {
+    return res.status(400).json({ message: 'No scan results provided' });
+  }
 
-  // Replace with your actual token or retrieve from environment/config
-  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2NkN2U0OWE3MGQ2MTdkYWIyMmJjYjEiLCJpYXQiOjE3NDQwMzAxNTksImV4cCI6MTc0NDAzMzc1OX0.2dasLSxjL4_JJ4nMAvN7A_b2Q1u3oC2U7zawlQDKRK8';
+  // Use the first scan result (adjust if multiple results need handling)
+  const scanResult = results[0];
+  const decodedText = scanResult.decodedText;
+  console.log('Received scan decodedText:', decodedText);
 
-  try {
-    console.log('Sending QR data to scan endpoint...');
-    // Fetch scanned QR data from your Vercel endpoint with Bearer token in headers
-    const scanRes = await axios.post(
-      'https://software-invite-api-self.vercel.app/guest/scan-qrcode/',
-      {
-        qrData: users[0]?.qrCode || '' // fallback, or adjust if needed
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    console.log('Received response from scan endpoint:', scanRes.data);
+  // Parse the decodedText to extract details
+  let firstName, lastName, email, phone;
+  decodedText.split('\n').forEach(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine.startsWith('First Name:')) {
+      firstName = trimmedLine.split('First Name:')[1].trim();
+    } else if (trimmedLine.startsWith('Last Name:')) {
+      lastName = trimmedLine.split('Last Name:')[1].trim();
+    } else if (trimmedLine.startsWith('Email:')) {
+      email = trimmedLine.split('Email:')[1].trim();
+    } else if (trimmedLine.startsWith('Phone:')) {
+      phone = trimmedLine.split('Phone:')[1].trim();
+    }
+  });
 
-    const scanned = scanRes.data?.results || [];
-    console.log('Scanned results:', scanned);
+  const fullName = firstName && lastName ? `${firstName} ${lastName}` : undefined;
+  console.log('Parsed values:', { name: fullName, email, phone });
 
-    // Check for match
-    const matched = [];
-    scanned.forEach((scan, scanIndex) => {
-      const decoded = scan.decodedText;
-      console.log(`Processing scanned result ${scanIndex}:`, decoded);
+  // Ensure all necessary values were extracted
+  if (!fullName || !email || !phone) {
+    return res.status(400).json({ message: 'Incomplete scan data' });
+  }
 
-      users.forEach((user, userIndex) => {
-        console.log(`Comparing with user ${userIndex}:`, user);
-        const found =
-          decoded.includes(user.name) ||
-          decoded.includes(user.email) ||
-          decoded.includes(user.phone);
-        
-        if (found) {
-          console.log(`Match found for user ${userIndex} in scanned result ${scanIndex}`);
-          matched.push({
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            qrCode: user.qrCode
-          });
-        } else {
-          console.log(`No match for user ${userIndex} in scanned result ${scanIndex}`);
-        }
-      });
-    });
+  // Query the database for a matching user record
+  const query = 'SELECT qrCode FROM users WHERE name = ? AND email = ? AND phone = ?';
+  connection.query(query, [fullName, email, phone], async (err, results) => {
+    if (err) {
+      console.error('Database query error:', err);
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
 
-    if (matched.length > 0) {
-      console.log('Matches found:', matched);
+    // If no matching user is found, return a 404 response
+    if (results.length === 0) {
+      console.log('No matching user found for:', { name: fullName, email, phone });
+      return res.status(404).json({ message: 'No matching user found' });
+    }
 
-      // Send matched QR codes to soft invite API endpoint
-      console.log('Sending matched QR codes to soft invite API...');
+    // Retrieve the stored QR code URL from the matched record
+    const qrCodeUrl = results[0].qrCode;
+    console.log('Match found with qrCode:', qrCodeUrl);
+
+    // Replace with your actual token or retrieve from environment/config
+    const token = 'your_actual_token_here';
+
+    try {
+      // Send the matching QR code to the soft invite API in the expected JSON format
       const inviteRes = await axios.post(
-        'https://software-invite-api-self.vercel.app/guest/scan-qrcode/', // update endpoint as needed
-        {
-          qrCodes: matched.map(match => match.qrCode)
-        },
+        'https://software-invite-api-self.vercel.app/guest/scan-qrcode/',
+        { qrData: qrCodeUrl },
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -130,21 +124,17 @@ app.post('/submit-data', async (req, res) => {
         }
       );
       console.log('Response from soft invite API:', inviteRes.data);
-
       return res.status(200).json({
-        message: 'Match found and QR codes sent to soft invite API!',
-        qrCodes: matched,
+        message: 'Match found and QR code sent to soft invite API',
         inviteResponse: inviteRes.data
       });
-    } else {
-      console.log('No matching users found.');
-      return res.status(404).json({ message: 'No matching users found' });
+    } catch (error) {
+      console.error('Error sending QR code to soft invite API:', error);
+      return res.status(500).json({ message: 'Error sending QR code to soft invite API', error });
     }
-  } catch (error) {
-    console.error('Error during processing:', error);
-    return res.status(500).json({ message: 'Server error during match check', error });
-  }
+  });
 });
+
 
 
 app.post('/submit-dat', (req, res) => {
