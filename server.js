@@ -1,12 +1,15 @@
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 
 // Enable CORS and JSON body parsing
 app.use(cors());
 app.use(express.json());
+
+
 
 // Create MySQL connection using your certificate
 const connection = mysql.createConnection({
@@ -45,6 +48,8 @@ zMcNJBgXS9wrHbstOMlGQiXKC8pX29kOfpskNtNg56huPDf0VQ==
   }
 });
 
+
+
 connection.connect(err => {
   if (err) {
     console.error("Error connecting to database:", err);
@@ -54,18 +59,89 @@ connection.connect(err => {
 });
 
 
-// POST endpoint that accepts any JSON payload
+connection.query("SHOW TABLES", (err, results) => {
+  if (err) console.error("Error showing tables:", err);
+  else console.log("Tables in database:", results);
+});
+
+
+// Route to insert guest data
+app.post('/guests', async (req, res) => {
+  try {
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      event,
+      eventDate,
+      location,
+      description
+    } = req.body;
+
+    const id = uuidv4();  // Generate a unique ID for the guest
+
+    // Insert guest data into the database
+    await db.query(
+      `INSERT INTO guests (id, firstName, lastName, email, phone, event, eventDate, location, description)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, firstName, lastName, email, phone, event, eventDate, location, description]
+    );
+
+    // Send response confirming success and returning the generated guest ID
+    res.json({ success: true, id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to save guest' });
+  }
+});
+
+// Route to view all guests
+app.get('/guests', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM guests ORDER BY createdAt DESC');
+    res.json(rows);  // Return all guest records, ordered by creation date
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch guests' });
+  }
+});
+
 app.post('/submit-data', (req, res) => {
   const data = req.body;
   
-  // Log the received JSON data to the console
-  console.log('Received JSON:', data);
+  // Assuming data is an array of objects and your table has columns that match the keys
+  const query = `INSERT INTO users (id, _id, name, email, phone, createdAt, status, qrCode)
+                 VALUES ?`;
+  const values = data.map(item => [
+    item.id,
+    item._id,
+    item.name,
+    item.email,
+    item.phone,
+    item.createdAt,
+    item.status,
+    item.qrCode
+  ]);
   
-  // Normally, here you would insert data into a database.
-  // For this simple example, we simply echo back the received data.
-  res.status(201).json({ 
-    message: 'Data successfully received',
-    data: data
+  connection.query(query, [values], (err, results) => {
+    if (err) {
+      console.error("Error inserting data:", err);
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
+    console.log("Data inserted:", results);
+    res.status(201).json({ message: 'Data successfully saved', results });
+  });
+});
+
+// Example: Securely fetch data (ensure you add proper authentication in a real-world scenario)
+app.get('/view-data', (req, res) => {
+  connection.query('SELECT * FROM users', (err, results) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
+    res.status(200).json({ data: results });
   });
 });
 
