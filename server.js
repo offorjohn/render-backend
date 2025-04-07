@@ -3,6 +3,8 @@ const { v4: uuidv4 } = require('uuid'); // Import UUID v4
 const mysql = require('mysql2');
 const cors = require('cors');
 
+const axios = require('axios'); // Make sure to install axios: npm install axios
+
 const app = express();
 
 // Enable CORS and JSON body parsing
@@ -195,6 +197,108 @@ app.get('/view-data', (req, res) => {
       return res.status(500).json({ message: 'Database error', error: err });
     }
     res.status(200).json({ data: results });
+  });
+});
+
+
+/**
+ * Helper function to parse submission data.
+ * This example assumes the submission JSON is stored in the "data" field and that it contains a "results" array
+ * with a "decodedText" property where the data is stored in a newline-delimited format.
+ *
+ * Example "decodedText":
+ * "First Name: stanley4\nLast Name: offor4\nEmail: stalo42@gmail.com\nPhone: 8169881336\n..."
+ */
+function parseSubmissionData(submissionJson) {
+  try {
+    const parsed = JSON.parse(submissionJson);
+    if (parsed.results && parsed.results.length > 0) {
+      const decodedText = parsed.results[0].decodedText;
+      const lines = decodedText.split('\n');
+      let firstName = '';
+      let lastName = '';
+      let email = '';
+      let phone = '';
+      lines.forEach(line => {
+        if (line.startsWith('First Name:')) {
+          firstName = line.replace('First Name:', '').trim();
+        } else if (line.startsWith('Last Name:')) {
+          lastName = line.replace('Last Name:', '').trim();
+        } else if (line.startsWith('Email:')) {
+          email = line.replace('Email:', '').trim();
+        } else if (line.startsWith('Phone:')) {
+          phone = line.replace('Phone:', '').trim();
+        }
+      });
+      // Construct full name by combining first and last name
+      const fullName = `${firstName} ${lastName}`.trim();
+      return { fullName, email, phone };
+    }
+  } catch (err) {
+    console.error('Error parsing submission JSON:', err);
+  }
+  return null;
+}
+
+// New endpoint to process matching between submissions and users and send data to the soft invite API
+app.post('/process-matches', async (req, res) => {
+  // Query all submissions
+  connection.query('SELECT * FROM submissions', async (err, submissionsResults) => {
+    if (err) {
+      console.error('Error fetching submissions:', err);
+      return res.status(500).json({ message: 'Failed to fetch submissions', error: err });
+    }
+
+    const processed = [];
+    // Iterate over each submission
+    for (const submission of submissionsResults) {
+      const submissionDetails = parseSubmissionData(submission.data);
+      if (submissionDetails) {
+        const { fullName, email, phone } = submissionDetails;
+        // Query users table for a matching record based on name, email, and phone
+        const query = 'SELECT * FROM users WHERE name = ? AND email = ? AND phone = ?';
+        const queryValues = [fullName, email, phone];
+
+        // Wrap the query in a promise for async/await
+        const user = await new Promise((resolve, reject) => {
+          connection.query(query, queryValues, (err, usersResults) => {
+            if (err) {
+              return reject(err);
+            }
+            resolve(usersResults[0]); // take the first matching record
+          });
+        }).catch(err => {
+          console.error('Error fetching user:', err);
+          return null;
+        });
+
+        // If a matching user is found, send their QR code link to the soft invite API
+        if (user) {
+          try {
+            const apiResponse = await axios.post('https://software-invite-api-self.vercel.app/guest/scan-qrcode/', {
+              qrData: user.qrCode
+            });
+            processed.push({
+              submissionId: submission.id,
+              userId: user.id,
+              inviteResponse: apiResponse.data
+            });
+          } catch (apiErr) {
+            console.error('Error sending data to soft invite API:', apiErr);
+            processed.push({
+              submissionId: submission.id,
+              userId: user.id,
+              error: apiErr.message
+            });
+          }
+        }
+      }
+    }
+
+    res.status(200).json({
+      message: 'Processing complete',
+      processedMatches: processed
+    });
   });
 });
 
