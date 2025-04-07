@@ -55,6 +55,37 @@ connection.connect(err => {
     console.log("Connected to MySQL database!");
   }
 });
+
+const getAuthToken = async () => {
+  try {
+    const response = await axios.post('https://software-invite-api-self.vercel.app/admin/login', {
+      email: 'stalo161@gmail.com',
+      password: 'stalo001'
+    });
+
+    const token = response.data.token; // Adjust based on actual response shape
+    console.log('New token:', token);
+
+    // Store it in a global variable or any context you want to use it from
+    currentToken = token;
+
+    return token;
+  } catch (error) {
+    console.error('Login failed:', error.response ? error.response.data : error.message);
+  }
+};
+
+// Global variable to hold the current token
+let currentToken = null;
+
+// Call once at start
+getAuthToken();
+setInterval(() => {
+  getAuthToken();
+}, 25 * 60 * 1000); // 25 minutes in milliseconds
+
+
+
 app.post('/submit-data', async (req, res) => {
   // Expecting the scan result JSON with a "results" array
   const { results } = req.body;
@@ -108,9 +139,7 @@ app.post('/submit-data', async (req, res) => {
     const qrCodeUrl = results[0].qrCode;
     console.log('Match found with qrCode:', qrCodeUrl);
 
-    // Replace with your actual token or retrieve from environment/config
-    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2NkN2U0OWE3MGQ2MTdkYWIyMmJjYjEiLCJpYXQiOjE3NDQwMzQyNDQsImV4cCI6MTc0NDAzNzg0NH0.fErc9AftXmmaf8jLft_l3Lf9gRvDgsBCASwf11V3Kdw';
-
+      const token = await getAuthToken();
     try {
       // Send the matching QR code to the soft invite API in the expected JSON format
       const inviteRes = await axios.post(
@@ -280,6 +309,8 @@ app.get('/view-data', (req, res) => {
     res.status(200).json({ data: results });
   });
 });
+
+
 
 
 
