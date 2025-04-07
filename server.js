@@ -17,7 +17,7 @@ const connection = mysql.createConnection({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   ssl: {
-    ca: `-----BEGIN CERTIFICATE-----
+    ca: -----BEGIN CERTIFICATE-----
 MIIEQTCCAqmgAwIBAgIUERt7YR9jM6EfYwhtPB9fQ8HjkwwwDQYJKoZIhvcNAQEM
 BQAwOjE4MDYGA1UEAwwvZmYzNzJlYTMtZjhhNS00NjczLWJlNjMtMjEyZjkwMzQx
 YTU4IFByb2plY3QgQ0EwHhcNMjQxMTI1MTAyODE4WhcNMzQxMTIzMTAyODE4WjA6
@@ -41,7 +41,7 @@ FOm+5IV44qCXbB87KyTXZo1UuoNSltJiHFVXQC+6GSfSoLn4YrBtdUHnlLm1fzdv
 9d6taC69BBedXIF3hRjOqXKbzclLMkltProMfWgJhJUK5/bY2JekqCbF0RFrSNX1
 ARqiTWIvp4eyPjvxfMmmRnjB5jZ1quioeDlS8S/QYg1kdZvu4QGTJt0HTHLjEwAx
 zMcNJBgXS9wrHbstOMlGQiXKC8pX29kOfpskNtNg56huPDf0VQ==
------END CERTIFICATE-----`,
+-----END CERTIFICATE-----,
     rejectUnauthorized: true
   }
 });
@@ -80,53 +80,19 @@ app.post('/submit-data', (req, res) => {
   });
 });
 
-app.post('/submit-dat', (req, res) => {
-  const data = req.body;
-  console.log(data);
 
-  // Check if the data contains unique IDs
-  const uniqueIds = new Set();
-  const filteredData = data.map(item => {
-    // Generate a new unique ID for each item if it doesn't already have one
-    if (!item.id) {
-      item.id = uuidv4(); // Generate a unique ID if it doesn't exist
-    }
-
-    if (uniqueIds.has(item.id)) {
-      return null; // Skip if the ID already exists (avoid duplicates)
-    }
-    uniqueIds.add(item.id);
-    return item;
-  }).filter(item => item !== null); // Filter out any null values (duplicates)
-
-  // Assuming data is an array of objects and your table has columns that match the keys
-  const query = `INSERT INTO users (id, name, email, phone, createdAt, status, qrCode)
-                 VALUES ?
-                 ON DUPLICATE KEY UPDATE name = VALUES(name), email = VALUES(email), phone = VALUES(phone), createdAt = VALUES(createdAt), status = VALUES(status), qrCode = VALUES(qrCode)`;
-
-  const values = filteredData.map(item => [
-    item.id,
-    item.name,
-    item.email,
-    item.phone,
-    item.createdAt,
-    item.status,
-    item.qrCode
-  ]);
-
-  connection.query(query, [values], (err, results) => {
-    if (err) {
-      console.error("Error inserting data:", err);
-      return res.status(500).json({ message: 'Database error', error: err });
-    }
-    console.log("Data inserted:", results);
-    res.status(201).json({ message: 'Data successfully saved', results });
-  });
-});
 
 app.post('/submit-data', (req, res) => {
   const data = req.body;
   console.log('Received JSON:', data);
+   // If the item already has an ID, but it's a duplicate, generate a new unique ID
+    if (uniqueIds.has(item.id)) {
+      item.id = uuidv4(); // Assign a new unique ID
+    }
+    uniqueIds.add(item.id); // Add the ID to the set
+
+    return item;
+  });
 
   // Ensure we are inserting each object individually
   data.forEach((item) => {
@@ -206,5 +172,5 @@ app.use((req, res) => {
 // Start the Express server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(Server is running on port ${PORT});
 });
