@@ -82,6 +82,7 @@ app.post('/submit-data', (req, res) => {
 
 app.post('/submit-dat', (req, res) => {
   const data = req.body;
+   console.log(data);
 
   // Check if the data contains unique IDs
   const uniqueIds = new Set();
