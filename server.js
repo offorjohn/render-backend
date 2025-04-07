@@ -94,13 +94,13 @@ app.post('/submit-dat', (req, res) => {
   });
 
   // Assuming data is an array of objects and your table has columns that match the keys
-  const query = `INSERT INTO users (id, _id, name, email, phone, createdAt, status, qrCode)
+  const query = `INSERT INTO users (id, name, email, phone, createdAt, status, qrCode)
                  VALUES ?
                  ON DUPLICATE KEY UPDATE name = VALUES(name), email = VALUES(email), phone = VALUES(phone), createdAt = VALUES(createdAt), status = VALUES(status), qrCode = VALUES(qrCode)`;
 
   const values = filteredData.map(item => [
     item.id,
-    item._id,
+    
     item.name,
     item.email,
     item.phone,
