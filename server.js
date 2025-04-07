@@ -299,21 +299,6 @@ app.get('/get-submissions', (req, res) => {
 });
 
 
-// Example: Securely fetch data (ensure you add proper authentication in a real-world scenario)
-app.get('/view-data', (req, res) => {
-  connection.query('SELECT * FROM users', (err, results) => {
-    if (err) {
-      console.error("Error fetching data:", err);
-      return res.status(500).json({ message: 'Database error', error: err });
-    }
-    res.status(200).json({ data: results });
-  });
-});
-
-
-
-
-
 
 // Default 404 route for unmatched endpoints
 app.use((req, res) => {
