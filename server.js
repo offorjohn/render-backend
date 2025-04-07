@@ -63,48 +63,31 @@ connection.query("SHOW TABLES", (err, results) => {
   if (err) console.error("Error showing tables:", err);
   else console.log("Tables in database:", results);
 });
-
-
-// Route to insert guest data
-app.post('/guests', async (req, res) => {
-  try {
-    const {
-      firstName,
-      lastName,
-      email,
-      phone,
-      event,
-      eventDate,
-      location,
-      description
-    } = req.body;
-
-    const id = uuidv4();  // Generate a unique ID for the guest
-
-    // Insert guest data into the database
-    await db.query(
-      `INSERT INTO guests (id, firstName, lastName, email, phone, event, eventDate, location, description)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, firstName, lastName, email, phone, event, eventDate, location, description]
-    );
-
-    // Send response confirming success and returning the generated guest ID
-    res.json({ success: true, id });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to save guest' });
-  }
-});
-
-// Route to view all guests
-app.get('/guests', async (req, res) => {
-  try {
-    const [rows] = await db.query('SELECT * FROM guests ORDER BY createdAt DESC');
-    res.json(rows);  // Return all guest records, ordered by creation date
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to fetch guests' });
-  }
+app.post('/qr-code', (req, res) => {
+  const { id, _id, name, email, phone, createdAt, status, qrCode } = req.body;
+  
+  const query = `INSERT INTO users (id, _id, name, email, phone, createdAt, status, qrCode)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+                 
+  const values = [id, _id, name, email, phone, createdAt, status, qrCode];
+  
+  connection.query(query, values, (err, results) => {
+    if (err) {
+      console.error("Error inserting QR code data:", err);
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
+    console.log("QR code data inserted:", results);
+    res.status(201).json({ message: 'QR code data successfully saved', results });
+  });
+});// Updated route to view all guests using the view-data format
+app.get('/guests', (req, res) => {
+  connection.query('SELECT * FROM guests ORDER BY createdAt DESC', (err, results) => {
+    if (err) {
+      console.error("Error fetching guests:", err);
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
+    res.status(200).json({ data: results });
+  });
 });
 
 app.post('/submit-data', (req, res) => {
