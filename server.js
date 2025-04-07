@@ -1,7 +1,6 @@
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
-const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 
@@ -52,67 +51,31 @@ connection.connect(err => {
   } else {
     console.log("Connected to MySQL database!");
   }
-});
+});app.post('/submit-data', (req, res) => {
+  const data = req.body;
+  
+  // Log the received JSON data to the console
+  console.log('Received JSON:', data);
+  
+  // Convert the JSON object to a string for storage
+  const jsonData = JSON.stringify(data);
 
-// -------------------------------------------------------------------
-// Example: Process and store QR code data using the JSON structure
-// Expected JSON format (example):
-// {
-//   "results": [
-//     {
-//       "decodedText": "First Name: stanley4\nLast Name: offor4\nEmail: stalo42@gmail.com\n...",
-//       "result": { ... }
-//     },
-//     {
-//       "decodedText": "Test QR Code 1",
-//       "result": { ... }
-//     }
-//   ]
-// }
-// -------------------------------------------------------------------
-
-app.post('/qr-codes', (req, res) => {
-  const { results } = req.body;
-  
-  if (!results || !Array.isArray(results)) {
-    return res.status(400).json({ message: "Invalid input format: 'results' must be an array." });
-  }
-  
-  // Create an array of values for bulk insertion.
-  // Here we generate a unique id for each record, store the decoded text,
-  // and convert the 'result' object to a JSON string.
-  const query = `INSERT INTO qrcodes (id, decodedText, result) VALUES ?`;
-  const values = results.map(item => [
-    uuidv4(),
-    item.decodedText,
-    JSON.stringify(item.result)
-  ]);
-  
-  connection.query(query, [values], (err, dbResults) => {
+  // Insert the JSON data into the 'submissions' table
+  const insertQuery = 'INSERT INTO submissions (data) VALUES (?)';
+  connection.query(insertQuery, [jsonData], (err, results) => {
     if (err) {
-      console.error("Error inserting QR code data:", err);
-      return res.status(500).json({ message: "Database error", error: err });
+      console.error("Error inserting data into database:", err);
+      return res.status(500).json({ message: 'Failed to save data', error: err });
     }
-    console.log("QR code data inserted:", dbResults);
-    res.status(201).json({ message: "QR code data successfully saved", results: dbResults });
+    
+    console.log("Data inserted successfully with ID:", results.insertId);
+    res.status(201).json({ 
+      message: 'Data successfully received and saved',
+      insertId: results.insertId,
+      data: data
+    });
   });
 });
-
-app.get('/guests', (req, res) => {
-  connection.query('SELECT * FROM guests ORDER BY createdAt DESC', (err, results) => {
-    if (err) {
-      console.error("Error fetching guests:", err);
-      return res.status(500).json({ message: 'Database error', error: err });
-    }
-    res.status(200).json({ data: results });
-  });
-});
-
-
-// -------------------------------------------------------------------
-// Existing routes for guests and submitters...
-// (Your /guests, /qr-code, /submit-data, and /view-data endpoints remain unchanged.)
-// -------------------------------------------------------------------
 
 // Default 404 route for unmatched endpoints
 app.use((req, res) => {
