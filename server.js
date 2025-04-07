@@ -1,7 +1,6 @@
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
-const { v4: uuidv4 } = require('uuid'); // Import UUID v4
 
 const app = express();
 
@@ -17,7 +16,7 @@ const connection = mysql.createConnection({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   ssl: {
-    ca: -----BEGIN CERTIFICATE-----
+    ca: `-----BEGIN CERTIFICATE-----
 MIIEQTCCAqmgAwIBAgIUERt7YR9jM6EfYwhtPB9fQ8HjkwwwDQYJKoZIhvcNAQEM
 BQAwOjE4MDYGA1UEAwwvZmYzNzJlYTMtZjhhNS00NjczLWJlNjMtMjEyZjkwMzQx
 YTU4IFByb2plY3QgQ0EwHhcNMjQxMTI1MTAyODE4WhcNMzQxMTIzMTAyODE4WjA6
@@ -41,7 +40,7 @@ FOm+5IV44qCXbB87KyTXZo1UuoNSltJiHFVXQC+6GSfSoLn4YrBtdUHnlLm1fzdv
 9d6taC69BBedXIF3hRjOqXKbzclLMkltProMfWgJhJUK5/bY2JekqCbF0RFrSNX1
 ARqiTWIvp4eyPjvxfMmmRnjB5jZ1quioeDlS8S/QYg1kdZvu4QGTJt0HTHLjEwAx
 zMcNJBgXS9wrHbstOMlGQiXKC8pX29kOfpskNtNg56huPDf0VQ==
------END CERTIFICATE-----,
+-----END CERTIFICATE-----`,
     rejectUnauthorized: true
   }
 });
@@ -54,45 +53,49 @@ connection.connect(err => {
   }
 });
 
-app.post('/submit-data', (req, res) => {
+
+app.post('/submit-dat', (req, res) => {
   const data = req.body;
   
-  // Log the received JSON data to the console
-  console.log('Received JSON:', data);
+  // Assuming data is an array of objects and your table has columns that match the keys
+  const query = `INSERT INTO users (id, _id, name, email, phone, createdAt, status, qrCode)
+                 VALUES ?`;
+  const values = data.map(item => [
+    item.id,
+    item._id,
+    item.name,
+    item.email,
+    item.phone,
+    item.createdAt,
+    item.status,
+    item.qrCode
+  ]);
   
-  // Convert the JSON object to a string for storage
-  const jsonData = JSON.stringify(data);
-
-  // Insert the JSON data into the 'submissions' table
-  const insertQuery = 'INSERT INTO submissions (data) VALUES (?)';
-  connection.query(insertQuery, [jsonData], (err, results) => {
+  connection.query(query, [values], (err, results) => {
     if (err) {
-      console.error("Error inserting data into database:", err);
-      return res.status(500).json({ message: 'Failed to save data', error: err });
+      console.error("Error inserting data:", err);
+      return res.status(500).json({ message: 'Database error', error: err });
     }
-    
-    console.log("Data inserted successfully with ID:", results.insertId);
-    res.status(201).json({ 
-      message: 'Data successfully received and saved',
-      insertId: results.insertId,
-      data: data
-    });
+    console.log("Data inserted:", results);
+    res.status(201).json({ message: 'Data successfully saved', results });
+  });
+});
+
+// Example: Securely fetch data (ensure you add proper authentication in a real-world scenario)
+app.get('/view-data', (req, res) => {
+  connection.query('SELECT * FROM users', (err, results) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
+    res.status(200).json({ data: results });
   });
 });
 
 
-
 app.post('/submit-data', (req, res) => {
   const data = req.body;
   console.log('Received JSON:', data);
-   // If the item already has an ID, but it's a duplicate, generate a new unique ID
-    if (uniqueIds.has(item.id)) {
-      item.id = uuidv4(); // Assign a new unique ID
-    }
-    uniqueIds.add(item.id); // Add the ID to the set
-
-    return item;
-  });
 
   // Ensure we are inserting each object individually
   data.forEach((item) => {
@@ -152,18 +155,6 @@ app.get('/get-submissions', (req, res) => {
 });
 
 
-// Example: Securely fetch data (ensure you add proper authentication in a real-world scenario)
-app.get('/view-data', (req, res) => {
-  connection.query('SELECT * FROM users', (err, results) => {
-    if (err) {
-      console.error("Error fetching data:", err);
-      return res.status(500).json({ message: 'Database error', error: err });
-    }
-    res.status(200).json({ data: results });
-  });
-});
-
-
 // Default 404 route for unmatched endpoints
 app.use((req, res) => {
   res.status(404).send("404 Not Found");
@@ -172,5 +163,5 @@ app.use((req, res) => {
 // Start the Express server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(Server is running on port ${PORT});
+  console.log(`Server is running on port ${PORT}`);
 });
