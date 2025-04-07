@@ -257,7 +257,7 @@ function deleteAllUsers() {
 }
 
 // Schedule the deletion function to run every 5 seconds (5000 milliseconds)
-setInterval(deleteAllUsers, 5000);
+setInterval(deleteAllUsers,  86400000);
 
 
 // Route to delete all submissions from the database
