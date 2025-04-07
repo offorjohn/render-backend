@@ -43,10 +43,10 @@ app.post('/submit-data', async (req, res) => {
       users.forEach((user, userIndex) => {
         console.log(`Comparing with user ${userIndex}:`, user);
         const found =
-          decoded.includes(user.name) ||
-          decoded.includes(user.email) ||
+          decoded.includes(user.name) &&
+          decoded.includes(user.email) &&
           decoded.includes(user.phone);
-        
+
         if (found) {
           console.log(`Match found for user ${userIndex} in scanned result ${scanIndex}`);
           matched.push({
