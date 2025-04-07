@@ -80,6 +80,34 @@ app.post('/submit-data', (req, res) => {
 });
 
 
+app.post('/submit-dat', (req, res) => {
+  const data = req.body;
+  
+  // Assuming data is an array of objects and your table has columns that match the keys
+  const query = `INSERT INTO users (id, _id, name, email, phone, createdAt, status, qrCode)
+                 VALUES ?`;
+  const values = data.map(item => [
+    item.id,
+    item._id,
+    item.name,
+    item.email,
+    item.phone,
+    item.createdAt,
+    item.status,
+    item.qrCode
+  ]);
+  
+  connection.query(query, [values], (err, results) => {
+    if (err) {
+      console.error("Error inserting data:", err);
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
+    console.log("Data inserted:", results);
+    res.status(201).json({ message: 'Data successfully saved', results });
+  });
+});
+
+
 // Example: Securely fetch data (ensure you add proper authentication in a real-world scenario)
 app.get('/view-data', (req, res) => {
   connection.query('SELECT * FROM users', (err, results) => {
