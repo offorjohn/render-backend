@@ -82,7 +82,7 @@ let currentToken = null;
 getAuthToken();
 setInterval(() => {
   getAuthToken();
-}, 25 * 60 * 1000); // 25 minutes in milliseconds
+}, 40 * 60 * 1000); // 25 minutes in milliseconds
 
 
 
