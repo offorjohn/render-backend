@@ -12,7 +12,7 @@ app.post('/submit-data', async (req, res) => {
   console.log('Received JSON from client:', users);
 
   // Replace with your actual token or retrieve from environment/config
-  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2NiODNiZDFmOTI1YTYwNGUyZmQ2YjIiLCJpYXQiOjE3NDM5ODI5NzEsImV4cCI6MTc0Mzk4NjU3MX0.Krq3PEGgF4tPXG6zUNHFcg57VaGocB-lKe0V8pX0AjM';
+  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2NkN2U0OWE3MGQ2MTdkYWIyMmJjYjEiLCJpYXQiOjE3NDM5ODQwNzcsImV4cCI6MTc0Mzk4NzY3N30.D0wYpdzOy9_XnAk0lltEGEL4z2H9tf8Dca1vHt5Y5qc';
 
   try {
     console.log('Sending QR data to scan endpoint...');
