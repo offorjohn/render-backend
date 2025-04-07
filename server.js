@@ -76,6 +76,42 @@ connection.connect(err => {
     });
   });
 });
+// Route to delete all submissions from the database
+app.delete('/delete-all-submissions', (req, res) => {
+  const query = 'DELETE FROM submissions';
+
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error('Error deleting data from database:', err);
+      return res.status(500).json({ message: 'Failed to delete data', error: err });
+    }
+
+    res.status(200).json({
+      message: 'All submissions successfully deleted',
+      affectedRows: results.affectedRows
+    });
+  });
+});
+
+
+
+// Route to get all submissions from the database
+app.get('/get-submissions', (req, res) => {
+  const query = 'SELECT * FROM submissions';
+
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching data from database:', err);
+      return res.status(500).json({ message: 'Failed to fetch data', error: err });
+    }
+
+    res.status(200).json({
+      message: 'Data fetched successfully',
+      submissions: results
+    });
+  });
+});
+
 
 // Default 404 route for unmatched endpoints
 app.use((req, res) => {
