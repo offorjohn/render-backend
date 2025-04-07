@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
+const { v4: uuidv4 } = require('uuid'); // Import UUID v4
 
 const app = express();
 
@@ -79,20 +80,24 @@ app.post('/submit-data', (req, res) => {
   });
 });
 
-
 app.post('/submit-dat', (req, res) => {
   const data = req.body;
-   console.log(data);
+  console.log(data);
 
   // Check if the data contains unique IDs
   const uniqueIds = new Set();
-  const filteredData = data.filter(item => {
+  const filteredData = data.map(item => {
+    // Generate a new unique ID for each item if it doesn't already have one
+    if (!item.id) {
+      item.id = uuidv4(); // Generate a unique ID if it doesn't exist
+    }
+
     if (uniqueIds.has(item.id)) {
-      return false; // Skip if the ID already exists
+      return null; // Skip if the ID already exists (avoid duplicates)
     }
     uniqueIds.add(item.id);
-    return true;
-  });
+    return item;
+  }).filter(item => item !== null); // Filter out any null values (duplicates)
 
   // Assuming data is an array of objects and your table has columns that match the keys
   const query = `INSERT INTO users (id, name, email, phone, createdAt, status, qrCode)
@@ -101,7 +106,6 @@ app.post('/submit-dat', (req, res) => {
 
   const values = filteredData.map(item => [
     item.id,
-    
     item.name,
     item.email,
     item.phone,
@@ -120,17 +124,6 @@ app.post('/submit-dat', (req, res) => {
   });
 });
 
-
-// Example: Securely fetch data (ensure you add proper authentication in a real-world scenario)
-app.get('/view-data', (req, res) => {
-  connection.query('SELECT * FROM users', (err, results) => {
-    if (err) {
-      console.error("Error fetching data:", err);
-      return res.status(500).json({ message: 'Database error', error: err });
-    }
-    res.status(200).json({ data: results });
-  });
-});
 app.post('/submit-data', (req, res) => {
   const data = req.body;
   console.log('Received JSON:', data);
@@ -189,6 +182,18 @@ app.get('/get-submissions', (req, res) => {
       message: 'Data fetched successfully',
       submissions: results
     });
+  });
+});
+
+
+// Example: Securely fetch data (ensure you add proper authentication in a real-world scenario)
+app.get('/view-data', (req, res) => {
+  connection.query('SELECT * FROM users', (err, results) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
+    res.status(200).json({ data: results });
   });
 });
 
