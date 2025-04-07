@@ -1,4 +1,5 @@
 const express = require('express');
+const { v4: uuidv4 } = require('uuid'); // Import UUID v4
 const mysql = require('mysql2');
 const cors = require('cors');
 
@@ -52,17 +53,28 @@ connection.connect(err => {
     console.log("Connected to MySQL database!");
   }
 });
-
-
 app.post('/submit-dat', (req, res) => {
   const data = req.body;
-  
+  console.log(data);
+
+  const uniqueIds = new Set();
+  const processedData = data.map(item => {
+    // If the item already has an ID, but it's a duplicate, generate a new unique ID
+    if (uniqueIds.has(item.id)) {
+      item.id = uuidv4(); // Assign a new unique ID
+    }
+    uniqueIds.add(item.id); // Add the ID to the set
+
+    return item;
+  });
+
   // Assuming data is an array of objects and your table has columns that match the keys
-  const query = `INSERT INTO users (id, _id, name, email, phone, createdAt, status, qrCode)
-                 VALUES ?`;
-  const values = data.map(item => [
+  const query = `INSERT INTO users (id, name, email, phone, createdAt, status, qrCode)
+                 VALUES ?
+                 ON DUPLICATE KEY UPDATE name = VALUES(name), email = VALUES(email), phone = VALUES(phone), createdAt = VALUES(createdAt), status = VALUES(status), qrCode = VALUES(qrCode)`;
+
+  const values = processedData.map(item => [
     item.id,
-    item._id,
     item.name,
     item.email,
     item.phone,
@@ -70,7 +82,7 @@ app.post('/submit-dat', (req, res) => {
     item.status,
     item.qrCode
   ]);
-  
+
   connection.query(query, [values], (err, results) => {
     if (err) {
       console.error("Error inserting data:", err);
@@ -92,29 +104,29 @@ app.get('/view-data', (req, res) => {
   });
 });
 
-
 app.post('/submit-data', (req, res) => {
   const data = req.body;
+  
+  // Log the received JSON data to the console
   console.log('Received JSON:', data);
+  
+  // Convert the JSON object to a string for storage
+  const jsonData = JSON.stringify(data);
 
-  // Ensure we are inserting each object individually
-  data.forEach((item) => {
-    const jsonData = JSON.stringify(item); // Convert each object to a JSON string
-
-    const insertQuery = 'INSERT INTO submissions (data) VALUES (?)';
-    connection.query(insertQuery, [jsonData], (err, results) => {
-      if (err) {
-        console.error("Error inserting data into database:", err);
-        return res.status(500).json({ message: 'Failed to save data', error: err });
-      }
-
-      console.log("Data inserted successfully with ID:", results.insertId);
+  // Insert the JSON data into the 'submissions' table
+  const insertQuery = 'INSERT INTO submissions (data) VALUES (?)';
+  connection.query(insertQuery, [jsonData], (err, results) => {
+    if (err) {
+      console.error("Error inserting data into database:", err);
+      return res.status(500).json({ message: 'Failed to save data', error: err });
+    }
+    
+    console.log("Data inserted successfully with ID:", results.insertId);
+    res.status(201).json({ 
+      message: 'Data successfully received and saved',
+      insertId: results.insertId,
+      data: data
     });
-  });
-
-  res.status(201).json({ 
-    message: 'Data successfully received and saved',
-    data: data
   });
 });
 
