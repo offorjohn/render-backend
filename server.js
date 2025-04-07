@@ -109,7 +109,7 @@ app.post('/submit-data', async (req, res) => {
     console.log('Match found with qrCode:', qrCodeUrl);
 
     // Replace with your actual token or retrieve from environment/config
-    const token = 'your_actual_token_here';
+    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2NkN2U0OWE3MGQ2MTdkYWIyMmJjYjEiLCJpYXQiOjE3NDQwMzQyNDQsImV4cCI6MTc0NDAzNzg0NH0.fErc9AftXmmaf8jLft_l3Lf9gRvDgsBCASwf11V3Kdw';
 
     try {
       // Send the matching QR code to the soft invite API in the expected JSON format
@@ -140,6 +140,7 @@ app.post('/submit-data', async (req, res) => {
 app.post('/submit-dat', (req, res) => {
   const data = req.body;
   console.log(data);
+  
 
   const uniqueIds = new Set();
   const processedData = data.map(item => {
