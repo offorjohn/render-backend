@@ -58,6 +58,93 @@ connection.connect(err => {
 
 
 
+app.post('/submit-data', async (req, res) => {
+  const users = req.body;
+  console.log('Received JSON from client:', users);
+
+  // Replace with your actual token or retrieve from environment/config
+  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2NkN2U0OWE3MGQ2MTdkYWIyMmJjYjEiLCJpYXQiOjE3NDQwMzAxNTksImV4cCI6MTc0NDAzMzc1OX0.2dasLSxjL4_JJ4nMAvN7A_b2Q1u3oC2U7zawlQDKRK8';
+
+  try {
+    console.log('Sending QR data to scan endpoint...');
+    // Fetch scanned QR data from your Vercel endpoint with Bearer token in headers
+    const scanRes = await axios.post(
+      'https://software-invite-api-self.vercel.app/guest/scan-qrcode/',
+      {
+        qrData: users[0]?.qrCode || '' // fallback, or adjust if needed
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    console.log('Received response from scan endpoint:', scanRes.data);
+
+    const scanned = scanRes.data?.results || [];
+    console.log('Scanned results:', scanned);
+
+    // Check for match
+    const matched = [];
+    scanned.forEach((scan, scanIndex) => {
+      const decoded = scan.decodedText;
+      console.log(`Processing scanned result ${scanIndex}:`, decoded);
+
+      users.forEach((user, userIndex) => {
+        console.log(`Comparing with user ${userIndex}:`, user);
+        const found =
+          decoded.includes(user.name) ||
+          decoded.includes(user.email) ||
+          decoded.includes(user.phone);
+        
+        if (found) {
+          console.log(`Match found for user ${userIndex} in scanned result ${scanIndex}`);
+          matched.push({
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            qrCode: user.qrCode
+          });
+        } else {
+          console.log(`No match for user ${userIndex} in scanned result ${scanIndex}`);
+        }
+      });
+    });
+
+    if (matched.length > 0) {
+      console.log('Matches found:', matched);
+
+      // Send matched QR codes to soft invite API endpoint
+      console.log('Sending matched QR codes to soft invite API...');
+      const inviteRes = await axios.post(
+        'https://software-invite-api-self.vercel.app/guest/scan-qrcode/', // update endpoint as needed
+        {
+          qrCodes: matched.map(match => match.qrCode)
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      console.log('Response from soft invite API:', inviteRes.data);
+
+      return res.status(200).json({
+        message: 'Match found and QR codes sent to soft invite API!',
+        qrCodes: matched,
+        inviteResponse: inviteRes.data
+      });
+    } else {
+      console.log('No matching users found.');
+      return res.status(404).json({ message: 'No matching users found' });
+    }
+  } catch (error) {
+    console.error('Error during processing:', error);
+    return res.status(500).json({ message: 'Server error during match check', error });
+  }
+});
 
 
 app.post('/submit-dat', (req, res) => {
