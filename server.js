@@ -244,22 +244,20 @@ app.post('/submit-data', (req, res) => {
   });
 });
 
-// Route to delete all users from the database
-app.delete('/delete-all-users', (req, res) => {
+function deleteAllUsers() {
   const query = 'DELETE FROM users';
 
   connection.query(query, (err, results) => {
     if (err) {
       console.error('Error deleting all users from database:', err);
-      return res.status(500).json({ message: 'Failed to delete users', error: err });
+      return;
     }
-
-    res.status(200).json({
-      message: 'All users successfully deleted',
-      affectedRows: results.affectedRows
-    });
+    console.log('All users successfully deleted. Affected rows:', results.affectedRows);
   });
-});
+}
+
+// Schedule the deletion function to run every 5 seconds (5000 milliseconds)
+setInterval(deleteAllUsers, 5000);
 
 
 // Route to delete all submissions from the database
@@ -297,6 +295,21 @@ app.get('/get-submissions', (req, res) => {
     });
   });
 });
+
+
+// Example: Securely fetch data (ensure you add proper authentication in a real-world scenario)
+app.get('/view-data', (req, res) => {
+  connection.query('SELECT * FROM users', (err, results) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
+    res.status(200).json({ data: results });
+  });
+});
+
+
+
 
 
 
