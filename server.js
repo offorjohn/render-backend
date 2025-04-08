@@ -98,46 +98,54 @@ app.post('/submit-data', async (req, res) => {
   const decodedText = scanResult.decodedText;
   console.log('Received scan decodedText:', decodedText);
 
-  // Parse the decodedText to extract details
-  let firstName, lastName, email, phone;
-  decodedText.split('\n').forEach(line => {
-    const trimmedLine = line.trim();
-    if (trimmedLine.startsWith('First Name:')) {
-      firstName = trimmedLine.split('First Name:')[1].trim();
-    } else if (trimmedLine.startsWith('Last Name:')) {
-      lastName = trimmedLine.split('Last Name:')[1].trim();
-    } else if (trimmedLine.startsWith('Email:')) {
-      email = trimmedLine.split('Email:')[1].trim();
-    } else if (trimmedLine.startsWith('Phone:')) {
-      phone = trimmedLine.split('Phone:')[1].trim();
-    }
-  });
+// Parse the decodedText to extract details
+let firstName, lastName, email, phone;
+decodedText.split('\n').forEach(line => {
+  const trimmedLine = line.trim();
+  if (trimmedLine.startsWith('First Name:')) {
+    firstName = trimmedLine.split('First Name:')[1].trim();
+  } else if (trimmedLine.startsWith('Last Name:')) {
+    lastName = trimmedLine.split('Last Name:')[1].trim();
+  } else if (trimmedLine.startsWith('Email:')) {
+    email = trimmedLine.split('Email:')[1].trim();
+  } else if (trimmedLine.startsWith('Phone:')) {
+    // strip all whitespace (spaces, tabs, etc.) from the phone string
+    phone = trimmedLine
+      .split('Phone:')[1]
+      .trim()              // remove leading/trailing
+      .replace(/\s+/g, ''); // remove any inner spaces
+  }
+});
 
-  const fullName = firstName && lastName ? `${firstName} ${lastName}` : undefined;
-  console.log('Parsed values:', { name: fullName, email, phone });
+const fullName = firstName && lastName ? `${firstName} ${lastName}` : undefined;
+console.log('Parsed values:', { name: fullName, email, phone });
 
-  // Ensure all necessary values were extracted
-  if (!fullName || !email || !phone) {
-    return res.status(400).json({ message: 'Incomplete scan data' });
+// Ensure all necessary values were extracted
+if (!fullName || !email || !phone) {
+  return res.status(400).json({ message: 'Incomplete scan data' });
+}
+
+// Now trim the DB side in the WHERE clause too
+const query = `
+  SELECT qrCode
+    FROM users
+   WHERE name  = ?
+     AND email = ?
+     AND TRIM(phone) = ?
+`;
+connection.query(query, [fullName, email, phone], async (err, results) => {
+  if (err) {
+    console.error('Database query error:', err);
+    return res.status(500).json({ message: 'Database error', error: err });
   }
 
-  // Query the database for a matching user record
-  const query = 'SELECT qrCode FROM users WHERE name = ? AND email = ? AND phone = ?';
-  connection.query(query, [fullName, email, phone], async (err, results) => {
-    if (err) {
-      console.error('Database query error:', err);
-      return res.status(500).json({ message: 'Database error', error: err });
-    }
+  if (results.length === 0) {
+    console.log('No matching user found for:', { name: fullName, email, phone });
+    return res.status(404).json({ message: 'No matching user found' });
+  }
 
-    // If no matching user is found, return a 404 response
-    if (results.length === 0) {
-      console.log('No matching user found for:', { name: fullName, email, phone });
-      return res.status(404).json({ message: 'No matching user found' });
-    }
-
-    // Retrieve the stored QR code URL from the matched record
-    const qrCodeUrl = results[0].qrCode;
-    console.log('Match found with qrCode:', qrCodeUrl);
+  const qrCodeUrl = results[0].qrCode;
+  console.log('Match found with qrCode:', qrCodeUrl);
 
       const token = await getAuthToken();
     try {
