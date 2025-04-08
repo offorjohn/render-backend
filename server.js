@@ -282,25 +282,19 @@ app.delete('/delete-all-submissions', (req, res) => {
   });
 });
 
-
-
-// Route to get all submissions from the database
+// GET route
 app.get('/get-submissions', (req, res) => {
-  const query = 'SELECT * FROM submissions';
-
-  connection.query(query, (err, results) => {
+  connection.query('SELECT * FROM submissions', (err, results) => {
     if (err) {
-      console.error('Error fetching data from database:', err);
+      console.error('Error fetching submissions:', err);
       return res.status(500).json({ message: 'Failed to fetch data', error: err });
     }
-
     res.status(200).json({
       message: 'Data fetched successfully',
       submissions: results
     });
   });
 });
-
 
 // Example: Securely fetch data (ensure you add proper authentication in a real-world scenario)
 app.get('/view-data', (req, res) => {
