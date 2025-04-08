@@ -98,7 +98,6 @@ app.post('/submit-data', async (req, res) => {
   const decodedText = scanResult.decodedText;
   console.log('Received scan decodedText:', decodedText);
 
-// Parse the decodedText to extract details
 let firstName, lastName, email, phone;
 decodedText.split('\n').forEach(line => {
   const trimmedLine = line.trim();
@@ -107,38 +106,36 @@ decodedText.split('\n').forEach(line => {
   } else if (trimmedLine.startsWith('Last Name:')) {
     lastName = trimmedLine.split('Last Name:')[1].trim();
   } else if (trimmedLine.startsWith('Email:')) {
-    email = trimmedLine.split('Email:')[1].trim();
+    email = trimmedLine.split('Email:')[1].trim().toLowerCase();
   } else if (trimmedLine.startsWith('Phone:')) {
-    // strip all whitespace (spaces, tabs, etc.) from the phone string
+    // 1) strip ALL whitespace (spaces, tabs, etc.)
     phone = trimmedLine
       .split('Phone:')[1]
-      .trim()              // remove leading/trailing
-      .replace(/\s+/g, ''); // remove any inner spaces
+      .replace(/\s/g, '');    // <-- removes every whitespace char
   }
 });
 
 const fullName = firstName && lastName ? `${firstName} ${lastName}` : undefined;
 console.log('Parsed values:', { name: fullName, email, phone });
 
-// Ensure all necessary values were extracted
 if (!fullName || !email || !phone) {
   return res.status(400).json({ message: 'Incomplete scan data' });
 }
 
-// Now trim the DB side in the WHERE clause too
+// 2) In the query, strip spaces from the stored phone too
 const query = `
   SELECT qrCode
     FROM users
    WHERE name  = ?
      AND email = ?
-     AND TRIM(phone) = ?
+     AND REPLACE(phone, ' ', '') = ?
 `;
+
 connection.query(query, [fullName, email, phone], async (err, results) => {
   if (err) {
     console.error('Database query error:', err);
     return res.status(500).json({ message: 'Database error', error: err });
   }
-
   if (results.length === 0) {
     console.log('No matching user found for:', { name: fullName, email, phone });
     return res.status(404).json({ message: 'No matching user found' });
