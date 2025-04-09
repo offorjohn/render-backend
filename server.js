@@ -93,6 +93,90 @@ app.post('/submit-data', async (req, res) => {
     return res.status(400).json({ message: 'No scan results provided' });
   }
 
+  // Use the first scan result (adjust if multiple results need handling)
+  const scanResult = results[0];
+  const decodedText = scanResult.decodedText;
+  console.log('Received scan decodedText:', decodedText);
+
+let firstName, lastName, email, phone;
+decodedText.split('\n').forEach(line => {
+  const trimmedLine = line.trim();
+  if (trimmedLine.startsWith('First Name:')) {
+    firstName = trimmedLine.split('First Name:')[1].trim();
+  } else if (trimmedLine.startsWith('Last Name:')) {
+    lastName = trimmedLine.split('Last Name:')[1].trim();
+  } else if (trimmedLine.startsWith('Email:')) {
+    email = trimmedLine.split('Email:')[1].trim().toLowerCase();
+  } else if (trimmedLine.startsWith('Phone:')) {
+    // 1) strip ALL whitespace (spaces, tabs, etc.)
+    phone = trimmedLine
+      .split('Phone:')[1]
+      .replace(/\s/g, '');    // <-- removes every whitespace char
+  }
+});
+
+  const fullName = firstName && lastName ? `${firstName} ${lastName}` : undefined;
+console.log('Parsed values:', { name: fullName, email, phone });
+
+if (!fullName || !email || !phone) {
+  return res.status(400).json({ message: 'Incomplete scan data' });
+}
+ const query = `
+    SELECT qrCode
+      FROM users
+     WHERE name  = ?
+       AND email = ?
+       AND REPLACE(phone, ' ', '') = ?
+  `;
+
+connection.query(query, [fullName, email, phone], async (err, results) => {
+  if (err) {
+    console.error('Database query error:', err);
+    return res.status(500).json({ message: 'Database error', error: err });
+  }
+  if (results.length === 0) {
+    console.log('No matching user found for:', { name: fullName, email, phone });
+    return res.status(404).json({ message: 'No matching user found' });
+  }
+
+  const qrCodeUrl = results[0].qrCode;
+  console.log('Match found with qrCode:', qrCodeUrl);
+
+      const token = await getAuthToken();
+    try {
+      // Send the matching QR code to the soft invite API in the expected JSON format
+      const inviteRes = await axios.post(
+        'https://software-invite-api-self.vercel.app/guest/scan-qrcode/',
+        { qrData: qrCodeUrl },
+        {
+          headers: {
+           'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      console.log('Response from soft invite API:', inviteRes.data);
+      return res.status(200).json({
+        message: 'Match found and QR code sent to soft invite API',
+        inviteResponse: inviteRes.data
+      });
+    } catch (error) {
+      console.error('Error sending QR code to soft invite API:', error);
+      return res.status(500).json({ message: 'Error sending QR code to soft invite API', error });
+    }
+  });
+});
+
+
+
+
+app.post('/submit-data', async (req, res) => {
+  // Expecting the scan result JSON with a "results" array
+  const { results } = req.body;
+  if (!results || !results.length) {
+    return res.status(400).json({ message: 'No scan results provided' });
+  }
+
   // Use the first scan result
   const scanResult = results[0];
   const decodedText = scanResult.decodedText;
