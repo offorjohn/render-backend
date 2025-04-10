@@ -59,8 +59,8 @@ connection.connect(err => {
 const getAuthToken = async () => {
   try {
     const response = await axios.post('https://software-invite-api-self.vercel.app/admin/login', {
-      email: 'stalo161@gmail.com',
-      password: 'stalo001'
+      email: 'sttttalo1@gmail.com',
+      password: 'stalo1'
     });
 
     const token = response.data.token; // Adjust based on actual response shape
