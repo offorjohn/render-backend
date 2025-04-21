@@ -77,6 +77,17 @@ app.post("/log-metric", (req, res) => {
   });
 });
 
+app.get("/metrics", (req, res) => {
+  connection.query("SELECT * FROM web_metrics ORDER BY timestamp DESC", (err, results) => {
+    if (err) {
+      console.error("Error fetching metrics:", err);
+      return res.status(500).json({ message: "Error fetching metrics" });
+    }
+    res.json(results);
+  });
+});
+
+
 
 
 
