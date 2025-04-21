@@ -56,6 +56,27 @@ connection.connect(err => {
   }
 });
 
+app.post("/log-metric", (req, res) => {
+  const { name, value, delta, id } = req.body;
+
+  if (!name || value == null) {
+    return res.status(400).json({ message: "Missing metric data" });
+  }
+
+  const query = `
+    INSERT INTO web_metrics (id, name, value, delta, timestamp)
+    VALUES (?, ?, ?, ?, NOW())
+  `;
+
+  connection.query(query, [id, name, value, delta], (err) => {
+    if (err) {
+      console.error("Failed to insert metric:", err);
+      return res.status(500).json({ message: "Error saving metric" });
+    }
+    res.json({ message: "Metric logged successfully" });
+  });
+});
+
 
 
 
