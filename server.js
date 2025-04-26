@@ -19,7 +19,7 @@ app.use(express.json());
 
 // serve uploaded recordings and images
 app.use("/uploads/recordings", express.static("uploads/recordings"));
-app.use("/uploads/images",    express.static("uploads/images"));
+app.use("/uploads/images", express.static("uploads/images"));
 
 // ───── API Routes ─────────────────────────────────────────────────────────────
 app.use("/api/auth",     AuthRoutes);
@@ -86,7 +86,7 @@ db.connect(err => {
   console.log("✅ Connected to MySQL");
 });
 
-// make `db` available in your routes via req.app.locals
+// make `db` available in your route/ make `db` available in your routes via req.app.locals
 app.locals.db = db;
 
 // ───── 404 handler ────────────────────────────────────────────────────────────
