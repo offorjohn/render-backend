@@ -1,5 +1,5 @@
 import { renameSync } from "fs";
-import getPrismaInstance from "../utils/PrismaClient.js";
+import getPrismaInstance from "./PrismaClient.js";
 
 export const getMessages = async (req, res, next) => {
   try {
