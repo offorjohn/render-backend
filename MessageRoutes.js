@@ -5,7 +5,7 @@ import {
   addMessage,
   getInitialContactsWithMessages,
   getMessages,
-} from "../controllers/MessageController.js";
+} from "./MessageController.js";
 import multer from "multer";
 
 const upload = multer({ dest: "uploads/recordings/" });
