@@ -7,8 +7,8 @@ import mysql from "mysql2";
 import axios from "axios";
 import { Server } from "socket.io";
 
-import AuthRoutes from "./routes/AuthRoutes.js";
-import MessageRoutes from "./routes/MessageRoutes.js";
+import AuthRoutes from "./AuthRoutes.js";
+import MessageRoutes from "./MessageRoutes.js";
 
 dotenv.config();
 const app = express();

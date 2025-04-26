@@ -4,7 +4,7 @@ import {
   generateToken,
   getAllUsers,
   onBoardUser,
-} from "../controllers/AuthController.js";
+} from "./AuthController.js";
 
 const router = Router();
 

@@ -1,6 +1,7 @@
 {
   "name": "my-app",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "start": "node server.mjs"
   },
@@ -10,7 +11,8 @@
     "express": "^4.21.2",
     "cors": "^2.8.5",
     "uuid": "^11.1.0",
-    "dotenv": "^16.4.0"
+    "dotenv": "^16.4.0",
+    "socket.io": "^4.7.5"
   },
   "engines": {
     "node": "16.x"
