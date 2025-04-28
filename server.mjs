@@ -95,7 +95,7 @@ app.use((req, res) => {
 });
 
 // ───── Start HTTP & Socket.IO Servers ────────────────────────────────────────
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3005;
 const httpServer = app.listen(PORT, () => {
   console.log(`🚀 Server listening on port ${PORT}`);
 });
