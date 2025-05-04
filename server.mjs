@@ -152,6 +152,21 @@ io.on("connection", socket => {
     const s = onlineUsers.get(data.from);
     if (s) socket.to(s).emit("video-call-rejected");
   });
+  
+  app.get("/api/data", (req, res) => {
+  const db = req.app.locals.db;
+  const query = "SELECT * FROM your_table"; // Replace 'your_table' with the actual table name
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      res.status(500).send("Internal Server Error");
+    } else {
+      res.json(results);
+    }
+  });
+});
+
 
   socket.on("accept-incoming-call", ({ id }) => {
     const s = onlineUsers.get(id);
