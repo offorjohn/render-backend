@@ -62,6 +62,42 @@ export const addUser = async (req, res, next) => {
   }
 };
 
+export const addTenUsersWithCustomIds = async (req, res, next) => {
+  try {
+    const prisma = getPrismaInstance();
+    const { startingId = 100 } = req.body;
+
+    const createdUsers = [];
+
+    for (let i = 0; i < 10; i++) {
+      const id = startingId + i;
+      const email = `user${id}@example.com`;
+      const name = `User ${id}`;
+      const profilePicture = `/avatars/${Math.floor(Math.random() * 9) + 1}.png`;
+
+      // Check if ID exists
+      const existing = await prisma.user.findUnique({ where: { id } });
+      if (existing) continue; // Skip if ID already used
+
+      const newUser = await prisma.user.create({
+        data: {
+          id,
+          email,
+          name,
+          profilePicture,
+          about: "Batch user",
+        },
+      });
+
+      createdUsers.push(newUser);
+    }
+
+    return res.status(201).json({ users: createdUsers });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const addUserWithCustomId = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();

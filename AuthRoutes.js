@@ -5,11 +5,14 @@ import {
   
   addUser, // ✅ Add this
   getAllUsers,
+  
+  addTenUsersWithCustomIds, // ✅ Correct function name
   onBoardUser,
   
   deleteUser, // ✅ Add this
 } from "./AuthController.js";
 import { addUserWithCustomId } from "./AuthController.js";
+import { addBatchUsers, deleteBatchUsers } from "./AuthController.js"
 
 const router = Router();
 
@@ -20,6 +23,9 @@ router.post("/add-user", addUser); // ✅ Register the new route
 router.post("/add-user-custom-id", addUserWithCustomId);
 
 router.delete("/delete-user/:id", deleteUser); // ✅ Add this line
+
+router.post("/add-batch-users", addTenUsersWithCustomIds);
+router.delete("/delete-batch-users/:startId", deleteBatchUsers);
 router.post("/onBoardUser", onBoardUser);
 router.get("/get-contacts", getAllUsers);
 router.get("/generate-token/:userId", generateToken);
