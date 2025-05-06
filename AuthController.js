@@ -18,6 +18,26 @@ export const checkUser = async (request, response, next) => {
     next(error);
   }
 };
+
+export const deleteUser = async (req, res, next) => {
+  try {3
+    const id = parseInt(req.params.id);
+
+    const prisma = getPrismaInstance();
+
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      return res.status(404).json({ msg: "User not found", status: false });
+    }
+
+    await prisma.user.delete({ where: { id } });
+
+    return res.status(200).json({ msg: "User deleted successfully", status: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const addUser = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
