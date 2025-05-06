@@ -6,13 +6,13 @@ import {
   addUser, // ✅ Add this
   getAllUsers,
   
-  addTenUsersWithCustomIds, // ✅ Correct function name
+  addTenUsersWithCustomIds, // ✅ Use actual export name
+  deleteBatchUsers,         // ✅ Only if this function is also exported
   onBoardUser,
   
   deleteUser, // ✅ Add this
 } from "./AuthController.js";
 import { addUserWithCustomId } from "./AuthController.js";
-import { addBatchUsers, deleteBatchUsers } from "./AuthController.js"
 
 const router = Router();
 

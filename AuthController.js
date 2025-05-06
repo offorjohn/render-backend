@@ -97,6 +97,29 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
     next(err);
   }
 };
+export const deleteBatchUsers = async (req, res, next) => {
+  try {
+    const startId = parseInt(req.params.startId);
+    const prisma = getPrismaInstance();
+
+    const deletedUsers = [];
+
+    for (let i = 0; i < 10; i++) {
+      const id = startId + i;
+      const user = await prisma.user.findUnique({ where: { id } });
+
+      if (user) {
+        await prisma.user.delete({ where: { id } });
+        deletedUsers.push(id);
+      }
+    }
+
+    return res.status(200).json({ msg: "Users deleted", deletedUsers });
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 export const addUserWithCustomId = async (req, res, next) => {
   try {
