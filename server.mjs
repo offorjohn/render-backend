@@ -109,11 +109,11 @@ const io = new Server(httpServer, {
   },
 });
 
- const fakeUsers = [
+const fakeUsers = [
   { id: "bot-weather", name: "WeatherBot" },
   { id: "bot-news", name: "NewsBot" },
 ];
-  
+
 app.get("/api/fake-users", (req, res) => {
   res.json(fakeUsers);
 });
@@ -162,34 +162,16 @@ io.on("connection", socket => {
     if (s) socket.to(s).emit("video-call-rejected");
   });
   
-  fakeUsers.forEach(bot => {
-  onlineUsers.set(bot.id, null); // no real socket id
-});
-
-  
- 
-
 
   socket.on("accept-incoming-call", ({ id }) => {
     const s = onlineUsers.get(id);
     if (s) socket.to(s).emit("accept-call");
   });
 
-socket.on("send-msg", data => {
-  const { from, to, message } = data;
-
-  if (to === "bot-weather") {
-    const reply = `🌦️ The weather is sunny and 25°C.`;
-    socket.emit("msg-recieve", { from: to, message: reply });
-  } else if (to === "bot-news") {
-    const reply = `📰 Today's top headline: "AI takes over boring chats!"`;
-    socket.emit("msg-recieve", { from: to, message: reply });
-  } else {
-    const s = onlineUsers.get(to);
-    if (s) socket.to(s).emit("msg-recieve", { from, message });
-  }
-});
-
+  socket.on("send-msg", data => {
+    const s = onlineUsers.get(data.to);
+    if (s) socket.to(s).emit("msg-recieve", { from: data.from, message: data.message });
+  });
 
   socket.on("mark-read", ({ id, recieverId }) => {
     const s = onlineUsers.get(id);
