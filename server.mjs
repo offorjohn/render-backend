@@ -91,6 +91,11 @@ db.connect(err => {
 // make `db` available in your routes via req.app.locals
 app.locals.db = db;
 
+// ───── 404 handler ────────────────────────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).send("404 Not Found");
+});
+
 // List all tables in the database
 app.get("/api/tables", (req, res) => {
   const db = req.app.locals.db;
@@ -103,11 +108,6 @@ app.get("/api/tables", (req, res) => {
   });
 });
 
-
-// ───── 404 handler ────────────────────────────────────────────────────────────
-app.use((req, res) => {
-  res.status(404).send("404 Not Found");
-});
 // ───── Start HTTP & Socket.IO Servers ────────────────────────────────────────
 const PORT = process.env.PORT || 3005;
 const httpServer = app.listen(PORT, () => {
