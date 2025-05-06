@@ -18,6 +18,30 @@ export const checkUser = async (request, response, next) => {
     next(error);
   }
 };
+export const addUser = async (req, res, next) => {
+  try {
+    const prisma = getPrismaInstance();
+    
+    // Destructure the required data from the request body
+    const { email, name, profilePicture, about } = req.body;
+
+    if (email && name) {
+      const newUser = await prisma.user.create({
+        data: {
+          email,
+          name,
+          profilePicture: profilePicture || '/default_avatar.png',  // Optional, default to a placeholder if not provided
+          about: about || '',  // Optional, default to an empty string if not provided
+        },
+      });
+      return res.status(201).json({ user: newUser });
+    }
+    return res.status(400).send("Email and name are required.");
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 export const onBoardUser = async (request, response, next) => {
   try {
