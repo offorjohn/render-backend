@@ -62,6 +62,41 @@ export const addUser = async (req, res, next) => {
   }
 };
 
+export const addUserWithCustomId = async (req, res, next) => {
+  try {
+    const prisma = getPrismaInstance();
+    const { id, email, name, profilePicture, about } = req.body;
+
+    if (!id || id < 100) {
+      return res.status(400).json({ msg: "ID must be provided and >= 100" });
+    }
+
+    if (!email || !name) {
+      return res.status(400).json({ msg: "Email and name are required" });
+    }
+
+    const existingUser = await prisma.user.findUnique({ where: { id } });
+    if (existingUser) {
+      return res.status(409).json({ msg: "User ID already exists" });
+    }
+
+    const newUser = await prisma.user.create({
+      data: {
+        id,
+        email,
+        name,
+        profilePicture: profilePicture || "/default_avatar.png",
+        about: about || "",
+      },
+    });
+
+    return res.status(201).json({ user: newUser });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 
 export const onBoardUser = async (request, response, next) => {
   try {
