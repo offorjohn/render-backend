@@ -109,6 +109,15 @@ const io = new Server(httpServer, {
   },
 });
 
+ const fakeUsers = [
+  { id: "bot-weather", name: "WeatherBot" },
+  { id: "bot-news", name: "NewsBot" },
+];
+  
+app.get("/api/fake-users", (req, res) => {
+  res.json(fakeUsers);
+});
+
 // track online users
 global.onlineUsers = new Map();
 
@@ -158,10 +167,7 @@ io.on("connection", socket => {
 });
 
   
-  const fakeUsers = [
-  { id: "bot-weather", name: "WeatherBot" },
-  { id: "bot-news", name: "NewsBot" },
-];
+ 
 
 
   socket.on("accept-incoming-call", ({ id }) => {
@@ -183,9 +189,7 @@ socket.on("send-msg", data => {
     if (s) socket.to(s).emit("msg-recieve", { from, message });
   }
 });
-app.get("/api/fake-users", (req, res) => {
-  res.json(fakeUsers);
-});
+
 
   socket.on("mark-read", ({ id, recieverId }) => {
     const s = onlineUsers.get(id);
