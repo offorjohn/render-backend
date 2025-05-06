@@ -109,15 +109,6 @@ const io = new Server(httpServer, {
   },
 });
 
-const fakeUsers = [
-  { id: "bot-weather", name: "WeatherBot" },
-  { id: "bot-news", name: "NewsBot" },
-];
-
-app.get("/api/fake-users", (req, res) => {
-  res.json(fakeUsers);
-});
-
 // track online users
 global.onlineUsers = new Map();
 
