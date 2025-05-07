@@ -61,62 +61,62 @@ export const addUser = async (req, res, next) => {
     next(err);
   }
 };
-
 export const addTenUsersWithCustomIds = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
     const { startingId = 100 } = req.body;
 
-    const createdUsers = [];
+    const arrayOfUserObjects = [];
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 1500; i++) {
       const id = startingId + i;
       const email = `user${id}@example.com`;
       const name = `User ${id}`;
       const profilePicture = `/avatars/${Math.floor(Math.random() * 9) + 1}.png`;
 
-      // Check if ID exists
-      const existing = await prisma.user.findUnique({ where: { id } });
-      if (existing) continue; // Skip if ID already used
-
-      const newUser = await prisma.user.create({
-        data: {
-          id,
-          email,
-          name,
-          profilePicture,
-          about: "Batch user",
-        },
+      arrayOfUserObjects.push({
+        id,
+        email,
+        name,
+        profilePicture,
+        about: "Batch user",
       });
-
-      createdUsers.push(newUser);
     }
 
-    return res.status(201).json({ users: createdUsers });
+    const result = await prisma.user.createMany({
+      data: arrayOfUserObjects,
+      skipDuplicates: true, // avoids inserting users with duplicate IDs
+    });
+
+    return res
+      .status(201)
+      .json({ message: `${result.count} users created successfully.` });
   } catch (err) {
     next(err);
   }
 };
-
 
 export const deleteBatchUsers = async (req, res, next) => {
   try {
     const startId = parseInt(req.params.startId);
     const prisma = getPrismaInstance();
 
-    const deletedUsers = [];
+    // Create an array of IDs to delete
+    const idsToDelete = Array.from({ length: 1500 }, (_, i) => startId + i);
 
-    for (let i = 0; i < 10; i++) {
-      const id = startId + i;
-      const user = await prisma.user.findUnique({ where: { id } });
+    // Delete all users with matching IDs
+    const result = await prisma.user.deleteMany({
+      where: {
+        id: {
+          in: idsToDelete,
+        },
+      },
+    });
 
-      if (user) {
-        await prisma.user.delete({ where: { id } });
-        deletedUsers.push(id);
-      }
-    }
-
-    return res.status(200).json({ msg: "Users deleted", deletedUsers });
+    return res.status(200).json({
+      message: `${result.count} users deleted.`,
+      deletedCount: result.count,
+    });
   } catch (err) {
     next(err);
   }
