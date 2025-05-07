@@ -25,10 +25,7 @@ app.use("/uploads/images",    express.static("uploads/images"));
 app.use("/api/auth",     AuthRoutes);
 app.use("/api/messages", MessageRoutes);
 
-// example utility endpoint: generate a UUID
-app.get("/api/uuid", (req, res) => {
-  res.json({ id: uuidv4() });
-});
+
 
 // ───── MySQL Connection ───────────────────────────────────────────────────────
 const db = mysql.createConnection({
@@ -104,18 +101,22 @@ const io = new Server(httpServer, {
 
 
 
+// track online users
 global.onlineUsers = new Map();
-io.on("connection", (socket) => {
+
+io.on("connection", socket => {
+  console.log("🔌 socket connected:", socket.id);
   global.chatSocket = socket;
-  socket.on("add-user", (userId) => {
-    global.onlineUsers.set(userId, socket.id);
+
+  socket.on("add-user", userId => {
+    onlineUsers.set(userId, socket.id);
     socket.broadcast.emit("online-users", {
-      onlineUsers: Array.from(onlineUsers.keys()),
+      onlineUsers: Array.from(onlineUsers.keys())
     });
   });
 
   socket.on("signout", id => {
-    global.onlineUsers.delete(id);
+    onlineUsers.delete(id);
     socket.broadcast.emit("online-users", {
       onlineUsers: Array.from(onlineUsers.keys())
     });
@@ -126,7 +127,7 @@ io.on("connection", (socket) => {
     if (targetSocket) {
       socket.to(targetSocket).emit(eventIn, data);
     } else {
-      const senderSocket = global.onlineUsers.get(data.from);
+      const senderSocket = onlineUsers.get(data.from);
       socket.to(senderSocket).emit(eventOut);
     }
   };
@@ -143,28 +144,19 @@ io.on("connection", (socket) => {
     const s = onlineUsers.get(data.from);
     if (s) socket.to(s).emit("video-call-rejected");
   });
-  
 
   socket.on("accept-incoming-call", ({ id }) => {
     const s = onlineUsers.get(id);
     if (s) socket.to(s).emit("accept-call");
   });
 
-
-
-  socket.on("send-msg", (data) => {
-    const sendUserSocket =global.onlineUsers.get(data.to);
-    if (sendUserSocket) {
-      socket
-        .to(sendUserSocket)
-        .emit("msg-recieve", { from: data.from, message: data.message });
-    }
+  socket.on("send-msg", data => {
+    const s = onlineUsers.get(data.to);
+    if (s) socket.to(s).emit("msg-recieve", { from: data.from, message: data.message });
   });
 
   socket.on("mark-read", ({ id, recieverId }) => {
-    const sendUserSocket = global.onlineUsers.get(id);
-    if (sendUserSocket) {
-      socket.to(sendUserSocket).emit("mark-read-recieve", { id, recieverId });
-    }
+    const s = onlineUsers.get(id);
+    if (s) socket.to(s).emit("mark-read-recieve", { id, recieverId });
   });
 });
