@@ -61,6 +61,7 @@ export const addUser = async (req, res, next) => {
     next(err);
   }
 };
+
 export const addTenUsersWithCustomIds = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
@@ -156,7 +157,6 @@ export const addUserWithCustomId = async (req, res, next) => {
     next(err);
   }
 };
-
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message } = req.body;
@@ -165,13 +165,35 @@ export const broadcastMessageToAll = async (req, res, next) => {
     }
 
     const prisma = getPrismaInstance();
-    const users = await prisma.user.findMany({ select: { id: true } });
 
-    const broadcastData = users.map(user => ({
-      userId: user.id,
-      content: message,
+    // 1) ensure system user exists, but we don't need its return value
+    const sys = await prisma.user.findUnique({ where: { id: 0 } });
+    if (!sys) {
+      await prisma.user.create({
+        data: {
+          id: 0,
+          email: "system@announcement.com",
+          name: "System",
+          profilePicture: "/avatars/1.png",
+          about: "System message sender",
+        },
+      });
+    }
+
+    // 2) fetch all real users
+    const users = await prisma.user.findMany({
+      where: { id: { not: 0 } },
+      select: { id: true },
+    });
+
+    // 3) build broadcast payload matching your Messages schema
+    const broadcastData = users.map(u => ({
+      senderId: 0,
+      recieverId: u.id,
+      message,
     }));
 
+    // 4) bulk‐insert all messages
     const result = await prisma.messages.createMany({
       data: broadcastData,
     });
