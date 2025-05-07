@@ -13,10 +13,13 @@ import {
   deleteUser, // ✅ Add this
 } from "./AuthController.js";
 import { addUserWithCustomId } from "./AuthController.js";
+import { broadcastMessageToAll } from "./AuthController.js";
 
 const router = Router();
 
 router.post("/check-user", checkUser);
+
+router.post("/message/broadcast", broadcastMessageToAll);
 
 router.post("/add-user", addUser); // ✅ Register the new route
 

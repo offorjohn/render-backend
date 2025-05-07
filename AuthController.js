@@ -157,6 +157,34 @@ export const addUserWithCustomId = async (req, res, next) => {
   }
 };
 
+export const broadcastMessageToAll = async (req, res, next) => {
+  try {
+    const { message } = req.body;
+    if (!message) {
+      return res.status(400).json({ message: "Message is required" });
+    }
+
+    const prisma = getPrismaInstance();
+    const users = await prisma.user.findMany({ select: { id: true } });
+
+    const broadcastData = users.map(user => ({
+      userId: user.id,
+      content: message,
+    }));
+
+    const result = await prisma.messages.createMany({
+      data: broadcastData,
+    });
+
+    return res.status(200).json({
+      message: `Broadcasted to ${result.count} users.`,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 
 
 export const onBoardUser = async (request, response, next) => {
