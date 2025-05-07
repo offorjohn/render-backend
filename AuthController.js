@@ -171,7 +171,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
     if (!sys) {
       await prisma.user.create({
         data: {
-          id: 0,
+          id: 100,
           email: "system@announcement.com",
           name: "System",
           profilePicture: "/avatars/1.png",
@@ -208,38 +208,31 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
 
 
+
+
 export const onBoardUser = async (request, response, next) => {
   try {
-    const { email, name, about = "Available", image: profilePicture } = request.body;
+    const {
+      email,
+      name,
+      about = "Available",
+      image: profilePicture,
+    } = request.body;
     if (!email || !name || !profilePicture) {
-      return response.status(400).json({ msg: "Email, Name and Image are required" });
+      return response.json({
+        msg: "Email, Name and Image are required",
+      });
+    } else {
+      const prisma = getPrismaInstance();
+      await prisma.user.create({
+        data: { email, name, about, profilePicture },
+      });
+      return response.json({ msg: "Success", status: true });
     }
-
-    const prisma = getPrismaInstance();
-
-    // find current maximum id
-    const lastUser = await prisma.user.findFirst({
-      orderBy: { id: "desc" },
-      select: { id: true },
-    });
-    const newId = lastUser ? lastUser.id + 1 : 100;  // start at 100 if none
-
-    const newUser = await prisma.user.create({
-      data: {
-        id: newId,
-        email,
-        name,
-        about,
-        profilePicture,
-      },
-    });
-
-    return response.json({ msg: "Success", status: true, data: newUser });
   } catch (error) {
     next(error);
   }
 };
-
 
 export const getAllUsers = async (req, res, next) => {
   try {
