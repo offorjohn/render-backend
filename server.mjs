@@ -92,23 +92,21 @@ const httpServer = app.listen(PORT, () => {
 
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_ORIGIN || "http://localhost:3000",
+    origin: process.env.FRONTEND_ORIGIN || "https://first-wave-card.glitch.me",
     credentials: true,
   },
 });
 
-
 // track online users
-const onlineUsers = new Map();
 
+global.onlineUsers = new Map();
 io.on("connection", (socket) => {
-  console.log("New socket connected", socket.id);
-
-  // When a user comes online
+  global.chatSocket = socket;
   socket.on("add-user", (userId) => {
     onlineUsers.set(userId, socket.id);
-    // broadcast updated list to all clients
-    io.emit("online-users", { onlineUsers: Array.from(onlineUsers.keys()) });
+    socket.broadcast.emit("online-users", {
+      onlineUsers: Array.from(onlineUsers.keys()),
+    });
   });
 
   socket.on("signout", (id) => {
