@@ -87,13 +87,16 @@ app.use((req, res) => {
 
 // ───── Start HTTP & Socket.IO Servers ────────────────────────────────────────
 const PORT = process.env.PORT || 3005;
+const server = app.listen(PORT, () => {
+  console.log(`server started on port ${PORT}`);
+});
 
-const server = app.listen(process.env.PORT, () => {
-  console.log(`server started on port ${process.env.PORT}`);
-});app.use(cors({
-  origin: "*", // Allow all origins
-  credentials: true // Optional, if you want to send cookies/auth headers
-}));
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Adjust this in production
+    methods: ["GET", "POST"]
+  }
+});
 
 
 // track online users
