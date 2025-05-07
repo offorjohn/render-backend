@@ -99,64 +99,83 @@ const io = new Server(httpServer, {
 
 // track online users
 
-
-
-// track online users
 global.onlineUsers = new Map();
-
-io.on("connection", socket => {
-  console.log("🔌 socket connected:", socket.id);
+io.on("connection", (socket) => {
   global.chatSocket = socket;
-
-  socket.on("add-user", userId => {
+  socket.on("add-user", (userId) => {
     onlineUsers.set(userId, socket.id);
     socket.broadcast.emit("online-users", {
-      onlineUsers: Array.from(onlineUsers.keys())
+      onlineUsers: Array.from(onlineUsers.keys()),
     });
   });
 
-  socket.on("signout", id => {
+  socket.on("signout", (id) => {
     onlineUsers.delete(id);
     socket.broadcast.emit("online-users", {
-      onlineUsers: Array.from(onlineUsers.keys())
+      onlineUsers: Array.from(onlineUsers.keys()),
     });
   });
 
-  const forwardOrOffline = (eventIn, eventOut) => data => {
-    const targetSocket = onlineUsers.get(data.to ?? data.from);
-    if (targetSocket) {
-      socket.to(targetSocket).emit(eventIn, data);
+  socket.on("outgoing-voice-call", (data) => {
+    const sendUserSocket = onlineUsers.get(data.to);
+    if (sendUserSocket) {
+      socket.to(sendUserSocket).emit("incoming-voice-call", {
+        from: data.from,
+        roomId: data.roomId,
+        callType: data.callType,
+      });
     } else {
       const senderSocket = onlineUsers.get(data.from);
-      socket.to(senderSocket).emit(eventOut);
+      socket.to(senderSocket).emit("voice-call-offline");
     }
-  };
-
-  socket.on("outgoing-voice-call", forwardOrOffline("incoming-voice-call", "voice-call-offline"));
-  socket.on("outgoing-video-call", forwardOrOffline("incoming-video-call", "video-call-offline"));
-
-  socket.on("reject-voice-call", data => {
-    const s = onlineUsers.get(data.from);
-    if (s) socket.to(s).emit("voice-call-rejected");
   });
 
-  socket.on("reject-video-call", data => {
-    const s = onlineUsers.get(data.from);
-    if (s) socket.to(s).emit("video-call-rejected");
+  socket.on("reject-voice-call", (data) => {
+    const sendUserSocket = onlineUsers.get(data.from);
+    if (sendUserSocket) {
+      socket.to(sendUserSocket).emit("voice-call-rejected");
+    }
+  });
+
+  socket.on("outgoing-video-call", (data) => {
+    const sendUserSocket = onlineUsers.get(data.to);
+    if (sendUserSocket) {
+      socket.to(sendUserSocket).emit("incoming-video-call", {
+        from: data.from,
+        roomId: data.roomId,
+        callType: data.callType,
+      });
+    } else {
+      const senderSocket = onlineUsers.get(data.from);
+      socket.to(senderSocket).emit("video-call-offline");
+    }
   });
 
   socket.on("accept-incoming-call", ({ id }) => {
-    const s = onlineUsers.get(id);
-    if (s) socket.to(s).emit("accept-call");
+    const sendUserSocket = onlineUsers.get(id);
+    socket.to(sendUserSocket).emit("accept-call");
   });
 
-  socket.on("send-msg", data => {
-    const s = onlineUsers.get(data.to);
-    if (s) socket.to(s).emit("msg-recieve", { from: data.from, message: data.message });
+  socket.on("reject-video-call", (data) => {
+    const sendUserSocket = onlineUsers.get(data.from);
+    if (sendUserSocket) {
+      socket.to(sendUserSocket).emit("video-call-rejected");
+    }
+  });
+
+  socket.on("send-msg", (data) => {
+    const sendUserSocket = onlineUsers.get(data.to);
+    if (sendUserSocket) {
+      socket
+        .to(sendUserSocket)
+        .emit("msg-recieve", { from: data.from, message: data.message });
+    }
   });
 
   socket.on("mark-read", ({ id, recieverId }) => {
-    const s = onlineUsers.get(id);
-    if (s) socket.to(s).emit("mark-read-recieve", { id, recieverId });
+    const sendUserSocket = onlineUsers.get(id);
+    if (sendUserSocket) {
+      socket.to(sendUserSocket).emit("mark-read-recieve", { id, recieverId });
+    }
   });
 });
