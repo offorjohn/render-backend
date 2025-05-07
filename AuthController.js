@@ -90,7 +90,7 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
 
     return res
       .status(201)
-      .json({ message: `${result.count} users created successfully.` });
+      .json({ message: ` Contacts created successfully.` });
   } catch (err) {
     next(err);
   }
@@ -114,7 +114,7 @@ export const deleteBatchUsers = async (req, res, next) => {
     });
 
     return res.status(200).json({
-      message: `${result.count} users deleted.`,
+      message: `Contacts deleted.`,
       deletedCount: result.count,
     });
   } catch (err) {
