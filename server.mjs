@@ -30,17 +30,6 @@ app.get("/api/uuid", (req, res) => {
   res.json({ id: uuidv4() });
 });
 
-// example utility endpoint: ping an external service
-app.get("/api/ping-external", async (req, res) => {
-  try {
-    const { data } = await axios.get("https://api.ipify.org?format=json");
-    res.json({ yourIp: data.ip });
-  } catch (err) {
-    console.error("Axios error:", err);
-    res.status(502).send("Bad Gateway");
-  }
-});
-
 // ───── MySQL Connection ───────────────────────────────────────────────────────
 const db = mysql.createConnection({
   host:     process.env.DB_HOST,
@@ -112,21 +101,21 @@ const io = new Server(httpServer, {
 });
 
 // track online users
+
+
+
 global.onlineUsers = new Map();
-
-io.on("connection", socket => {
-  console.log("🔌 socket connected:", socket.id);
+io.on("connection", (socket) => {
   global.chatSocket = socket;
-
-  socket.on("add-user", userId => {
-    onlineUsers.set(userId, socket.id);
+  socket.on("add-user", (userId) => {
+    global.onlineUsers.set(userId, socket.id);
     socket.broadcast.emit("online-users", {
-      onlineUsers: Array.from(onlineUsers.keys())
+      onlineUsers: Array.from(onlineUsers.keys()),
     });
   });
 
   socket.on("signout", id => {
-    onlineUsers.delete(id);
+    global.onlineUsers.delete(id);
     socket.broadcast.emit("online-users", {
       onlineUsers: Array.from(onlineUsers.keys())
     });
@@ -137,7 +126,7 @@ io.on("connection", socket => {
     if (targetSocket) {
       socket.to(targetSocket).emit(eventIn, data);
     } else {
-      const senderSocket = onlineUsers.get(data.from);
+      const senderSocket = global.onlineUsers.get(data.from);
       socket.to(senderSocket).emit(eventOut);
     }
   };
@@ -164,7 +153,7 @@ io.on("connection", socket => {
 
 
   socket.on("send-msg", (data) => {
-    const sendUserSocket = onlineUsers.get(data.to);
+    const sendUserSocket =global.onlineUsers.get(data.to);
     if (sendUserSocket) {
       socket
         .to(sendUserSocket)
@@ -173,7 +162,7 @@ io.on("connection", socket => {
   });
 
   socket.on("mark-read", ({ id, recieverId }) => {
-    const sendUserSocket = onlineUsers.get(id);
+    const sendUserSocket = global.onlineUsers.get(id);
     if (sendUserSocket) {
       socket.to(sendUserSocket).emit("mark-read-recieve", { id, recieverId });
     }
