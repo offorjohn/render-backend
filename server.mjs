@@ -14,7 +14,8 @@ dotenv.config();
 const app = express();
 
 // ───── Middleware ─────────────────────────────────────────────────────────────
-app.use(cors());
+app.use(cors({ origin: "*" }));
+
 app.use(express.json());
 
 // serve uploaded recordings and images
@@ -89,18 +90,11 @@ const PORT = process.env.PORT || 3005;
 
 const server = app.listen(process.env.PORT, () => {
   console.log(`server started on port ${process.env.PORT}`);
-});
-const allowedOrigins = ["https://whatapp-9e7o.vercel.app"];
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true
+});app.use(cors({
+  origin: "*", // Allow all origins
+  credentials: true // Optional, if you want to send cookies/auth headers
 }));
+
 
 // track online users
 
