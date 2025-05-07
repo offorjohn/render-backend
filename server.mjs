@@ -97,16 +97,18 @@ const io = new Server(httpServer, {
   },
 });
 
-// track online users
 
-global.onlineUsers = new Map();
+// track online users
+const onlineUsers = new Map();
+
 io.on("connection", (socket) => {
-  global.chatSocket = socket;
+  console.log("New socket connected", socket.id);
+
+  // When a user comes online
   socket.on("add-user", (userId) => {
     onlineUsers.set(userId, socket.id);
-    socket.broadcast.emit("online-users", {
-      onlineUsers: Array.from(onlineUsers.keys()),
-    });
+    // broadcast updated list to all clients
+    io.emit("online-users", { onlineUsers: Array.from(onlineUsers.keys()) });
   });
 
   socket.on("signout", (id) => {
