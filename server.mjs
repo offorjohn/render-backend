@@ -161,13 +161,21 @@ io.on("connection", socket => {
     if (s) socket.to(s).emit("accept-call");
   });
 
-  socket.on("send-msg", data => {
-    const s = onlineUsers.get(data.to);
-    if (s) socket.to(s).emit("msg-recieve", { from: data.from, message: data.message });
+
+
+  socket.on("send-msg", (data) => {
+    const sendUserSocket = onlineUsers.get(data.to);
+    if (sendUserSocket) {
+      socket
+        .to(sendUserSocket)
+        .emit("msg-recieve", { from: data.from, message: data.message });
+    }
   });
 
   socket.on("mark-read", ({ id, recieverId }) => {
-    const s = onlineUsers.get(id);
-    if (s) socket.to(s).emit("mark-read-recieve", { id, recieverId });
+    const sendUserSocket = onlineUsers.get(id);
+    if (sendUserSocket) {
+      socket.to(sendUserSocket).emit("mark-read-recieve", { id, recieverId });
+    }
   });
 });
