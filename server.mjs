@@ -86,16 +86,21 @@ app.use((req, res) => {
 
 // ───── Start HTTP & Socket.IO Servers ────────────────────────────────────────
 const PORT = process.env.PORT || 3005;
-const httpServer = app.listen(PORT, () => {
-  console.log(`🚀 Server listening on port ${PORT}`);
-});
 
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.FRONTEND_ORIGIN || "https://first-wave-card.glitch.me",
-    credentials: true,
-  },
+const server = app.listen(process.env.PORT, () => {
+  console.log(`server started on port ${process.env.PORT}`);
 });
+const allowedOrigins = ["https://whatapp-9e7o.vercel.app"];
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
+}));
 
 // track online users
 
