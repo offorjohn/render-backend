@@ -169,6 +169,40 @@ export const addUserWithCustomId = async (req, res, next) => {
 };
 
 
+
+const detectIntent = (msg) => {
+  const lowerMsg = msg.toLowerCase();
+  if (msg.trim().endsWith("?")) return "question";
+  if (lowerMsg.startsWith("can you") || lowerMsg.startsWith("please") || lowerMsg.startsWith("kindly"))
+    return "request";
+  if (
+    lowerMsg.startsWith("announcement") ||
+    lowerMsg.startsWith("attention") ||
+    lowerMsg.startsWith("please note")
+  )
+    return "announcement";
+  return "general";
+};
+
+const responseTemplates = {
+  question: [
+    (msg) => `That's a great question. "${faker.word.words(5)}"`,
+    (msg) => `We'll check and respond soon. "${faker.word.words(6)}"`,
+  ],
+  request: [
+    (msg) => `Sure, we'll handle that. "${faker.word.words(5)}"`,
+    (msg) => `Received your request. "${faker.word.words(6)}"`,
+  ],
+  announcement: [
+    (msg) => `Announcement received. "${faker.word.words(5)}"`,
+    (msg) => `Thanks for letting us know. "${faker.word.words(6)}"`,
+  ],
+  general: [
+    (msg) => `Message received. "${faker.word.words(5)}"`,
+    (msg) => `Thanks for your message. "${faker.word.words(6)}"`,
+  ],
+};
+
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message } = req.body;
@@ -203,10 +237,13 @@ export const broadcastMessageToAll = async (req, res, next) => {
     }
 
     const broadcastData = [];
+    const intent = detectIntent(message);
+    const templates = responseTemplates[intent];
 
-    for (let senderId = 100; senderId <= 180; senderId++) {
+    for (let senderId = 100; senderId <= 170; senderId++) {
       for (const user of users) {
-        const fakeMessage = faker.lorem.sentence(); // Only faker used here
+        const replyFn = faker.helpers.arrayElement(templates);
+        const fakeMessage = replyFn(message);
         broadcastData.push({
           senderId,
           recieverId: user.id,
@@ -220,7 +257,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
       skipDuplicates: true,
     });
 
-    return res.status(200).json({ message: "Broadcasted with realistic messages.", status: true });
+    return res.status(200).json({ message: "Broadcasted", status: true });
 
   } catch (err) {
     console.error("Broadcast error:", err);
