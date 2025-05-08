@@ -204,7 +204,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
 const broadcastData = [];
 
-for (let senderId = 100; senderId < 900; senderId++) {
+for (let senderId = 100; senderId < 199; senderId++) {
   for (const user of users) {
     broadcastData.push({
       senderId,
