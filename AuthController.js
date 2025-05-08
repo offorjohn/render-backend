@@ -1,5 +1,6 @@
 import getPrismaInstance from "./PrismaClient.js";
 import { generateToken04 } from "./TokenGenerator.js";
+import { faker } from '@faker-js/faker';
 
 export const checkUser = async (request, response, next) => {
   try {
