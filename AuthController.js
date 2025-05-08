@@ -223,7 +223,7 @@ for (let senderId = 100; senderId < 190; senderId++) {
     return res
       .status(200)
       .json({
-        message: `Broadcasted to ${result.count} users.`,
+        message: `Broadcasted.`,
         status:  true,
       });
   } catch (err) {
