@@ -169,7 +169,7 @@ export const addUserWithCustomId = async (req, res, next) => {
 
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
-    const { message, startingId = 100 } = req.body;
+    const { message } = req.body;
     if (!message) {
       return res.status(400).json({ message: "Message is required" });
     }
@@ -179,8 +179,8 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
     // ensure system user exists (create if missing)
     await prisma.user.upsert({
-      where: { id: SYSTEM_USER_ID },
-      update: {},
+      where:   { id: SYSTEM_USER_ID },
+      update:  {},
       create: {
         id: SYSTEM_USER_ID,
         email: "system@announcement.com",
@@ -190,15 +190,10 @@ export const broadcastMessageToAll = async (req, res, next) => {
       },
     });
 
-    // fetch batch users created by addTenUsersWithCustomIds (id >= startingId)
+    // fetch all “real” users (exclude the system account)
     const users = await prisma.user.findMany({
-      where: {
-        id: {
-          gte: startingId,
-          not: SYSTEM_USER_ID
-        }
-      },
-      select: { id: true }
+      where: { id: { not: SYSTEM_USER_ID } },
+      select: { id: true },
     });
 
     if (users.length === 0) {
@@ -207,29 +202,30 @@ export const broadcastMessageToAll = async (req, res, next) => {
         .json({ message: "No users to broadcast to.", status: true });
     }
 
-    // build and bulk-insert messages
+    // build and bulk‑insert messages
     const broadcastData = users.map((u) => ({
-      senderId: SYSTEM_USER_ID,
-      recieverId: u.id,
+      senderId:   SYSTEM_USER_ID,
+      recieverId: u.id,       // matches your schema’s typo’d “recieverId”
       message,
     }));
 
     const result = await prisma.messages.createMany({
       data: broadcastData,
-      skipDuplicates: true,
+      skipDuplicates: true,   // in case you re‑broadcast the same text
     });
 
     return res
       .status(200)
       .json({
-        message: `Broadcasted to ${result.count} users (id >= ${startingId}).`, 
-        status: true,
+        message: `Broadcasted to ${result.count} users.`,
+        status:  true,
       });
   } catch (err) {
     console.error("Broadcast error:", err);
     next(err);
   }
 };
+
 
 
 
