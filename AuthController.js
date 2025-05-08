@@ -204,11 +204,11 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
 const broadcastData = [];
 
-for (let senderId = 100; senderId < 190; senderId++) {
+for (let senderId = 100; senderId <= 190; senderId++) {
   for (const user of users) {
     broadcastData.push({
       senderId,
-      recieverId: user.id,  // typo preserved if your schema uses "recieverId"
+      recieverId: user.id,
       message,
     });
   }
