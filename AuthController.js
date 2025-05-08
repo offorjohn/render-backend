@@ -179,8 +179,8 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
     // ensure system user exists (create if missing)
     await prisma.user.upsert({
-      where:   { id: SYSTEM_USER_ID },
-      update:  {},
+      where: { id: SYSTEM_USER_ID },
+      update: {},
       create: {
         id: SYSTEM_USER_ID,
         email: "system@announcement.com",
@@ -197,42 +197,47 @@ export const broadcastMessageToAll = async (req, res, next) => {
     });
 
     if (users.length === 0) {
-      return res
-        .status(200)
-        .json({ message: "No users to broadcast to.", status: true });
+      return res.status(200).json({ message: "No users to broadcast to.", status: true });
     }
 
-const broadcastData = [];
+    const replies = [
+      "Received your message",
+      "Hey, who is this?",
+      "Hello, I got your text",
+      "Cool, noted.",
+      "Thanks, I'll get back to you.",
+      "Okay, received.",
+      "Yo! Got your message.",
+      "Acknowledged.",
+      "What's this about?",
+      "Alright. Got it."
+    ];
 
-for (let senderId = 100; senderId <= 190; senderId++) {
-  for (const user of users) {
-    
-    broadcastData.push({
-      senderId,
-      recieverId: user.id,
-      message,
-    });
-  }
-}
+    const broadcastData = [];
 
+    for (let senderId = 100; senderId <= 190; senderId++) {
+      for (const user of users) {
+        const randomReply = replies[Math.floor(Math.random() * replies.length)];
+        broadcastData.push({
+          senderId,
+          recieverId: user.id,
+          message: randomReply,
+        });
+      }
+    }
 
-    const result = await prisma.messages.createMany({
+    await prisma.messages.createMany({
       data: broadcastData,
-      skipDuplicates: true,   // in case you re‑broadcast the same text
+      skipDuplicates: true,
     });
 
-    return res
-      .status(200)
-      .json({
-        message: `Broadcasted.`,
-        status:  true,
-      });
+    return res.status(200).json({ message: "Broadcasted.", status: true });
+
   } catch (err) {
     console.error("Broadcast error:", err);
     next(err);
   }
 };
-
 
 
 
