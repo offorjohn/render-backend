@@ -202,37 +202,17 @@ export const broadcastMessageToAll = async (req, res, next) => {
         .json({ message: "No users to broadcast to.", status: true });
     }
 
-const batchSize = 1000;  // Adjust this based on your memory capacity
-let batch = [];
+const broadcastData = [];
 
-for (let senderId = 100; senderId < 1100; senderId++) {
+for (let senderId = 100; senderId < 900; senderId++) {
   for (const user of users) {
-    batch.push({
+    broadcastData.push({
       senderId,
-      recieverId: user.id,
+      recieverId: user.id,  // typo preserved if your schema uses "recieverId"
       message,
     });
-
-    // If the batch is full, insert it into the database
-    if (batch.length >= batchSize) {
-      await prisma.messages.createMany({
-        data: batch,
-        skipDuplicates: true,  // Avoid duplicates if you're re-broadcasting
-      });
-      batch = [];  // Reset the batch
-    }
   }
 }
-
-// Insert any remaining messages after the loop
-if (batch.length > 0) {
-  await prisma.messages.createMany({
-    data: batch,
-    skipDuplicates: true,
-  });
-}
-
-
 
 
     const result = await prisma.messages.createMany({
