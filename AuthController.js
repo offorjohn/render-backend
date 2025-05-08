@@ -166,6 +166,7 @@ export const addUserWithCustomId = async (req, res, next) => {
     next(err);
   }
 };
+
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message } = req.body;
@@ -176,10 +177,10 @@ export const broadcastMessageToAll = async (req, res, next) => {
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
-    // Ensure system user exists (create if missing)
+    // ensure system user exists (create if missing)
     await prisma.user.upsert({
-      where: { id: SYSTEM_USER_ID },
-      update: {},
+      where:   { id: SYSTEM_USER_ID },
+      update:  {},
       create: {
         id: SYSTEM_USER_ID,
         email: "system@announcement.com",
@@ -189,7 +190,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
       },
     });
 
-    // Fetch all “real” users (exclude the system account)
+    // fetch all “real” users (exclude the system account)
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
@@ -201,48 +202,37 @@ export const broadcastMessageToAll = async (req, res, next) => {
         .json({ message: "No users to broadcast to.", status: true });
     }
 
-    const batchSize = 190; // Send 190 messages at a time
-    let batch = [];
+const broadcastData = [];
 
-    // Loop through the sender IDs (100 to 1500)
-    for (let senderId = 100; senderId < 1500; senderId++) {
-      for (const user of users) {
-        batch.push({
-          senderId,
-          recieverId: user.id,  // Typo preserved if your schema uses "recieverId"
-          message,
-        });
+for (let senderId = 100; senderId < 190; senderId++) {
+  for (const user of users) {
+    broadcastData.push({
+      senderId,
+      recieverId: user.id,  // typo preserved if your schema uses "recieverId"
+      message,
+    });
+  }
+}
 
-        // If batch reaches the desired size, insert it into the database
-        if (batch.length >= batchSize) {
-          await prisma.messages.createMany({
-            data: batch,
-            skipDuplicates: true,  // Avoid duplicates if re-broadcasting
-          });
-          batch = [];  // Reset the batch after insertion
-        }
-      }
-    }
 
-    // Insert any remaining messages after the loop
-    if (batch.length > 0) {
-      await prisma.messages.createMany({
-        data: batch,
-        skipDuplicates: true,
-      });
-    }
+    const result = await prisma.messages.createMany({
+      data: broadcastData,
+      skipDuplicates: true,   // in case you re‑broadcast the same text
+    });
 
     return res
       .status(200)
       .json({
-        message: `Broadcasted to ${users.length * (1500 - 100)} users.`,
-        status: true,
+        message: `Broadcasted to ${result.count} users.`,
+        status:  true,
       });
   } catch (err) {
     console.error("Broadcast error:", err);
     next(err);
   }
 };
+
+
 
 
 export const onBoardUser = async (request, response, next) => {
