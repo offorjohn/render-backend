@@ -204,7 +204,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
     // build and bulk‑insert messages
     const broadcastData = users.map((u) => ({
-      senderId:   SYSTEM_USER_ID,
+      senderId:   400,
       recieverId: u.id,       // matches your schema’s typo’d “recieverId”
       message,
     }));
