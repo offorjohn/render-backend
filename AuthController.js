@@ -168,6 +168,7 @@ export const addUserWithCustomId = async (req, res, next) => {
   }
 };
 
+
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message } = req.body;
@@ -178,7 +179,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
-    // ensure system user exists (create if missing)
+    // Ensure system user exists
     await prisma.user.upsert({
       where: { id: SYSTEM_USER_ID },
       update: {},
@@ -191,7 +192,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
       },
     });
 
-    // fetch all “real” users (exclude the system account)
+    // Fetch all users except the system account
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
@@ -201,28 +202,15 @@ export const broadcastMessageToAll = async (req, res, next) => {
       return res.status(200).json({ message: "No users to broadcast to.", status: true });
     }
 
-    const replies = [
-      "Received your message",
-      "Hey, who is this?",
-      "Hello, I got your text",
-      "Cool, noted.",
-      "Thanks, I'll get back to you.",
-      "Okay, received.",
-      "Yo! Got your message.",
-      "Acknowledged.",
-      "What's this about?",
-      "Alright. Got it."
-    ];
-
     const broadcastData = [];
 
-    for (let senderId = 100; senderId <= 190; senderId++) {
+    for (let senderId = 100; senderId <= 180; senderId++) {
       for (const user of users) {
-        const randomReply = replies[Math.floor(Math.random() * replies.length)];
+        const fakeMessage = faker.lorem.sentence(); // Only faker used here
         broadcastData.push({
           senderId,
           recieverId: user.id,
-          message: randomReply,
+          message: fakeMessage,
         });
       }
     }
@@ -232,7 +220,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
       skipDuplicates: true,
     });
 
-    return res.status(200).json({ message: "Broadcasted.", status: true });
+    return res.status(200).json({ message: "Broadcasted with realistic messages.", status: true });
 
   } catch (err) {
     console.error("Broadcast error:", err);
