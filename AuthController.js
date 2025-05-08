@@ -96,16 +96,24 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
     next(err);
   }
 };
-
 export const deleteBatchUsers = async (req, res, next) => {
   try {
     const startId = parseInt(req.params.startId);
     const prisma = getPrismaInstance();
 
-    // Create an array of IDs to delete
     const idsToDelete = Array.from({ length: 1500 }, (_, i) => startId + i);
 
-    // Delete all users with matching IDs
+    // First, delete all messages related to these users
+    await prisma.messages.deleteMany({
+      where: {
+        OR: [
+          { senderId: { in: idsToDelete } },
+          { recieverId: { in: idsToDelete } }
+        ]
+      }
+    });
+
+    // Now delete the users
     const result = await prisma.user.deleteMany({
       where: {
         id: {
@@ -122,6 +130,7 @@ export const deleteBatchUsers = async (req, res, next) => {
     next(err);
   }
 };
+
 
 
 export const addUserWithCustomId = async (req, res, next) => {
@@ -160,7 +169,7 @@ export const addUserWithCustomId = async (req, res, next) => {
 
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
-    const { message } = req.body;
+    const { message, startingId = 100 } = req.body;
     if (!message) {
       return res.status(400).json({ message: "Message is required" });
     }
@@ -170,8 +179,8 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
     // ensure system user exists (create if missing)
     await prisma.user.upsert({
-      where:   { id: SYSTEM_USER_ID },
-      update:  {},
+      where: { id: SYSTEM_USER_ID },
+      update: {},
       create: {
         id: SYSTEM_USER_ID,
         email: "system@announcement.com",
@@ -181,10 +190,15 @@ export const broadcastMessageToAll = async (req, res, next) => {
       },
     });
 
-    // fetch all “real” users (exclude the system account)
+    // fetch batch users created by addTenUsersWithCustomIds (id >= startingId)
     const users = await prisma.user.findMany({
-      where: { id: { not: SYSTEM_USER_ID } },
-      select: { id: true },
+      where: {
+        id: {
+          gte: startingId,
+          not: SYSTEM_USER_ID
+        }
+      },
+      select: { id: true }
     });
 
     if (users.length === 0) {
@@ -193,31 +207,29 @@ export const broadcastMessageToAll = async (req, res, next) => {
         .json({ message: "No users to broadcast to.", status: true });
     }
 
-    // build and bulk‑insert messages
+    // build and bulk-insert messages
     const broadcastData = users.map((u) => ({
-      senderId:   SYSTEM_USER_ID,
-      recieverId: u.id,       // matches your schema’s typo’d “recieverId”
+      senderId: SYSTEM_USER_ID,
+      recieverId: u.id,
       message,
     }));
 
     const result = await prisma.messages.createMany({
       data: broadcastData,
-      skipDuplicates: true,   // in case you re‑broadcast the same text
+      skipDuplicates: true,
     });
 
     return res
       .status(200)
       .json({
-        message: `Broadcasted to ${result.count} users.`,
-        status:  true,
+        message: `Broadcasted to ${result.count} users (id >= ${startingId}).`, 
+        status: true,
       });
   } catch (err) {
     console.error("Broadcast error:", err);
     next(err);
   }
 };
-
-
 
 
 
