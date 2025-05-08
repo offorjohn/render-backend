@@ -167,6 +167,52 @@ export const addUserWithCustomId = async (req, res, next) => {
   }
 };
 
+
+const SYSTEM_USER_ID = 100;
+const BOT_IDS = Array.from({ length: 20 }, (_, i) => 200 + i);
+const BOT_RESPONSES = [
+  "Received your message",
+  "Hey, who is this?",
+  "Hello, I got your text",
+  "Thanks for the broadcast",
+  "Can you explain more?",
+  "Interesting update!",
+  "Ack, message received",
+  "What’s up?",
+  "Sounds good",
+  "Got it!",
+  "Nice to hear from you",
+  "Please send details",
+  "Roger that",
+  "Copy that",
+  "Cool message",
+  "OK",
+  "Thanks!",
+  "Looking into it",
+  "On it",
+  "👍"
+];
+
+/** send bot replies immediately */
+async function sendBotReplies(prisma, receiverIds) {
+  const replies = BOT_IDS.map(botId => {
+    const randomResponse = BOT_RESPONSES[Math.floor(Math.random() * BOT_RESPONSES.length)];
+    const targetUserId   = receiverIds[Math.floor(Math.random() * receiverIds.length)];
+    return {
+      senderId:   botId,
+      recieverId: targetUserId,
+      message:    randomResponse
+    };
+  });
+
+  try {
+    await prisma.messages.createMany({ data: replies, skipDuplicates: true });
+    console.log("✅ Bot replies inserted immediately");
+  } catch (err) {
+    console.error("❌ Error inserting bot replies:", err);
+  }
+}
+
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message } = req.body;
@@ -175,12 +221,11 @@ export const broadcastMessageToAll = async (req, res, next) => {
     }
 
     const prisma = getPrismaInstance();
-    const SYSTEM_USER_ID = 100;
 
-    // ensure system user exists (create if missing)
+    // ensure system user exists
     await prisma.user.upsert({
-      where:   { id: SYSTEM_USER_ID },
-      update:  {},
+      where: { id: SYSTEM_USER_ID },
+      update: {},
       create: {
         id: SYSTEM_USER_ID,
         email: "system@announcement.com",
@@ -190,50 +235,38 @@ export const broadcastMessageToAll = async (req, res, next) => {
       },
     });
 
-    // fetch all “real” users (exclude the system account)
+    // fetch all real users (exclude system)
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
-      select: { id: true },
+      select: { id: true }
     });
 
     if (users.length === 0) {
-      return res
-        .status(200)
-        .json({ message: "No users to broadcast to.", status: true });
+      return res.status(200).json({ message: "No users to broadcast to.", status: true });
     }
 
-const broadcastData = [];
+    const receiverIds = users.map(u => u.id);
 
-for (let senderId = 100; senderId <= 190; senderId++) {
-  for (const user of users) {
-    broadcastData.push({
-      senderId,
-      recieverId: user.id,
-      message,
+    // broadcast
+    const broadcastData = receiverIds.map(uid => ({
+      senderId:   SYSTEM_USER_ID,
+      recieverId: uid,
+      message
+    }));
+    await prisma.messages.createMany({ data: broadcastData, skipDuplicates: true });
+
+    // immediately send bot replies
+    sendBotReplies(prisma, receiverIds);
+
+    return res.status(200).json({
+      message: `Broadcasted to ${users.length} users. Bot replies sent immediately.`,
+      status: true
     });
-  }
-}
-
-
-    const result = await prisma.messages.createMany({
-      data: broadcastData,
-      skipDuplicates: true,   // in case you re‑broadcast the same text
-    });
-
-    return res
-      .status(200)
-      .json({
-        message: `Broadcasted.`,
-        status:  true,
-      });
   } catch (err) {
     console.error("Broadcast error:", err);
     next(err);
   }
 };
-
-
-
 
 export const onBoardUser = async (request, response, next) => {
   try {
