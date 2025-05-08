@@ -203,11 +203,18 @@ export const broadcastMessageToAll = async (req, res, next) => {
     }
 
     // build and bulk‑insert messages
-    const broadcastData = users.map((u) => ({
-      senderId:   400,
-      recieverId: u.id,       // matches your schema’s typo’d “recieverId”
+const broadcastData = [];
+
+for (let senderId = 100; senderId <= 1500; senderId++) {
+  for (const user of users) {
+    broadcastData.push({
+      senderId,
+      recieverId: user.id,
       message,
-    }));
+    });
+  }
+}
+
 
     const result = await prisma.messages.createMany({
       data: broadcastData,
