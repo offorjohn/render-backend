@@ -327,7 +327,18 @@ const generateReplies = (message) => {
     "I'll let you know what I find out soon."
   ];
 
-  // Detect if the message contains a greeting offering help
+  // Detect if the message contains a greeting (hello/hi)
+  const greetings = [
+    "hello",
+    "hi",
+    "hey",
+    "greetings",
+    "howdy",
+    "good morning",
+    "good afternoon",
+    "good evening"
+  ];
+
   const helpGreetings = [
     "how can I help",
     "how may I assist",
@@ -342,10 +353,37 @@ const generateReplies = (message) => {
 
   const lowerMessage = message.toLowerCase();
 
+
+  // Check if the message contains a greeting
+  if (greetings.some(greeting => lowerMessage.includes(greeting))) {
+    const greetingReplies = [
+      "Hello! How can I assist you today?",
+      "Hi there! How may I help you?",
+      "Hey! What can I do for you?",
+      "Greetings! How can I be of help?",
+      "Hello! How can I support you today?",
+      "Hi! Is there something you need assistance with?",
+      "Hey there! What’s on your mind?",
+      "Hello! How can I help you today?"
+    ];
+    return [greetingReplies[Math.floor(Math.random() * greetingReplies.length)]];
+  }
+
   // Check if the message contains a help-related greeting
   if (helpGreetings.some(greeting => lowerMessage.includes(greeting))) {
-    return ["How can I assist you today?"];  // A helpful response
+    const helpReplies = [
+      "How can I assist you today?",
+      "What can I do for you today?",
+      "How may I help you?",
+      "Is there something you need help with?",
+      "How can I help you today?",
+      "How can I be of assistance?",
+      "Anything I can help you with?",
+      "What can I do to support you?"
+    ];
+    return [helpReplies[Math.floor(Math.random() * helpReplies.length)]];
   }
+
 
   // Detect the nature of the message (simple classification by keywords or length)
   if (
@@ -394,6 +432,7 @@ const generateReplies = (message) => {
     return neutralReplies;  // Default neutral reply
   }
 };
+
 
 
 export const broadcastMessageToAll = async (req, res, next) => {
