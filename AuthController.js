@@ -168,230 +168,50 @@ export const addUserWithCustomId = async (req, res, next) => {
   }
 };
 
+const generateReplies = (message) => {
+  // Message patterns to detect and match the context
+  const positiveReplies = [
+    "Received your message, thanks!",
+    "Got it, I'll take care of it.",
+    "Sounds good, I'll follow up soon.",
+    "Thanks for the update, I'll check it out.",
+    "Got your message, will respond shortly."
+  ];
 
+  const neutralReplies = [
+    "Okay, noted.",
+    "Understood, thanks.",
+    "Alright, I'll process that now.",
+    "Message received, thank you.",
+    "Got it, I'll make a note of it."
+  ];
 
-const detectIntent = (msg) => {
-  const lowerMsg = msg.toLowerCase();
-  if (msg.trim().endsWith("?")) return "question";
-  if (lowerMsg.startsWith("can you") || lowerMsg.startsWith("please") || lowerMsg.startsWith("kindly"))
-    return "request";
-  if (
-    lowerMsg.startsWith("announcement") ||
-    lowerMsg.startsWith("attention") ||
-    lowerMsg.startsWith("please note")
-  )
-    return "announcement";
-  return "general";
-};
+  const confusedReplies = [
+    "Can you clarify that?",
+    "I'm not sure I follow, could you explain?",
+    "What exactly do you mean by that?",
+    "Can you provide more details?",
+    "I'm not sure what you're asking, can you elaborate?"
+  ];
 
-const responseTemplates = {
-  question: [
-    "That's a great question. Thank you for asking.",
-    "Interesting question. We'll review it.",
-    "We're reviewing your inquiry. We'll get back to you with an answer.",
-    "Appreciate your curiosity. Noted.",
-    "Your question has been recorded. Good point, we'll look into it.",
-    "We'll check and respond soon. Noted.",
-    "Interesting question. Appreciate your curiosity.",
-    "Good point, we'll look into it. Thank you for asking.",
-    "We're reviewing your inquiry. Your question has been recorded.",
-    "Appreciate your curiosity. We'll get back to you with an answer.",
-    "Thanks for your question. We're looking into it now.",
-    "We appreciate your insight. We'll follow up soon.",
-    "Thanks for reaching out with this question.",
-    "Noted. We'll circle back shortly.",
-    "That's a fair point. We'll find out.",
-    "Your question is being processed.",
-    "We'll notify you once we have more clarity.",
-    "Appreciate your thought. We’ll get back to you soon.",
-    "Looking into it now. Thank you.",
-    "This is being forwarded to the relevant team.",
-    "We value your feedback. Thanks for the question.",
-    "Excellent question. You’ll hear from us soon.",
-    "Acknowledged. Stay tuned for a reply.",
-    "Thanks. We'll return with the answer soon.",
-    "That’s being reviewed. Appreciate your engagement.",
-    "We’ve marked this as high priority.",
-    "Nice catch. We'll investigate.",
-    "Question recorded. Follow-up pending.",
-    "Stay posted for updates.",
-    "We've logged your query.",
-    "Processing your input now.",
-    "You’ll receive a response once confirmed.",
-    "Reviewing and validating. Thanks.",
-    "Our support team is checking.",
-    "Escalated to team. Await feedback.",
-    "You're being heard. Hang tight.",
-    "Very insightful. Thanks for raising it.",
-    "We’ve flagged this for attention.",
-    "Thanks, we’ll return shortly.",
-    "Being processed. You’ll get an update.",
-    "That’s helpful. Looking into it.",
-    "Appreciated. We'll let you know.",
-    "In review. Thanks for submitting.",
-    "Being explored. Stay with us.",
-    "We’ll be back with an answer.",
-    "On our radar now. Thank you.",
-    "In queue for response.",
-    "That’s noted. Please stand by.",
-    "Recorded. Awaiting confirmation.",
-    "Sent to review board.",
-    "Your feedback matters. Reviewing."
-  ],
-  request: [
-    "Sure, we'll handle that. We're working on it.",
-    "Received your request. Thanks for the request.",
-    "We're on it. Consider it done.",
-    "Got it. We'll take action. We're working on it.",
-    "We'll make it happen. Got it.",
-    "Your request has been noted. Thanks for the request.",
-    "We're on it. Your request has been noted.",
-    "Consider it done. We're working on it.",
-    "Sure, we'll handle that. Got it. We'll take action.",
-    "Thanks for the request. We're working on it.",
-    "Noted. Processing your request now.",
-    "We'll handle this ASAP.",
-    "Action initiated. Thanks for the input.",
-    "We’ve received your instructions.",
-    "This will be taken care of.",
-    "You can count on us.",
-    "Got your task. Processing.",
-    "Your input has been accepted.",
-    "This is being addressed.",
-    "Thank you. We'll work on it.",
-    "We’ll respond once it’s resolved.",
-    "Currently resolving this.",
-    "Steps initiated. Thanks.",
-    "Under way. Please standby.",
-    "It’s being reviewed now.",
-    "We’ll confirm once done.",
-    "Logged and prioritized.",
-    "We'll take care of this.",
-    "Following up promptly.",
-    "Rest assured, it’s moving.",
-    "Active resolution ongoing.",
-    "Your input is important.",
-    "Handled. Confirmation pending.",
-    "That’s been initiated.",
-    "Everything’s being organized.",
-    "Handling request as we speak.",
-    "You’ll hear back soon.",
-    "Already routing for action.",
-    "Quick action promised.",
-    "Your concern is addressed.",
-    "We’re looking after it.",
-    "Resolving with care.",
-    "Accepted and active.",
-    "We’ve started work on this.",
-    "This is in progress.",
-    "Priority acknowledged.",
-    "Timely follow-up ahead.",
-    "On it, resolving quickly.",
-    "We’ll update you soon.",
-    "Just started the process."
-  ],
-  announcement: [
-    "Announcement received. Thanks for the update.",
-    "Thanks for letting us know. Broadcast understood.",
-    "Update acknowledged. Thanks for the update.",
-    "Your announcement has been logged. We'll act on this message.",
-    "Broadcast understood. Update acknowledged.",
-    "Thanks for the update. We’ve taken note of your announcement.",
-    "This is now part of our records. Announcement received.",
-    "We'll pass this along. Broadcast understood.",
-    "Thanks for letting us know. Your announcement has been logged.",
-    "Update acknowledged. We’ve taken note of your announcement.",
-    "Announcement recorded successfully.",
-    "Your message has been broadcast.",
-    "That’s clear. Appreciated.",
-    "Received and stored.",
-    "Consider it shared.",
-    "We’ve received the update.",
-    "Public notice recorded.",
-    "Internal team notified.",
-    "That has been pushed out.",
-    "Update made public.",
-    "Everyone’s been informed.",
-    "Marked as announcement.",
-    "Confirmed. Thanks for alerting us.",
-    "Marked as public note.",
-    "Shared with all recipients.",
-    "Pushed to everyone.",
-    "We acknowledge your broadcast.",
-    "Audience notified.",
-    "Officially registered.",
-    "Syndicated properly.",
-    "Fed into update stream.",
-    "System-wide update done.",
-    "Shared to appropriate teams.",
-    "Informed all stakeholders.",
-    "Validated and shared.",
-    "We got the announcement.",
-    "Relayed to end-users.",
-    "Dissemination completed.",
-    "Notice saved successfully.",
-    "Documented as public info.",
-    "Public message archived.",
-    "Storage complete.",
-    "Thanks. Announced officially.",
-    "Pushed to bulletin board.",
-    "Alert received.",
-    "Notified all ends.",
-    "Flagged as broadcast.",
-    "Public info recognized.",
-    "Accepted as valid alert."
-  ],
-  general: [
-    "Message received. Got your message.",
-    "Thanks for your message. We’ve seen your note.",
-    "We’ve logged your input. Understood.",
-    "Thanks for reaching out. We appreciate the message.",
-    "Understood. We’ve logged your input.",
-    "We appreciate the message. Got your message.",
-    "Got your message. Message received.",
-    "We’ve seen your note. We’ve logged your input.",
-    "Thanks for your message. Understood.",
-    "Thanks for reaching out. Message received.",
-    "Thanks. We’ve taken note.",
-    "We acknowledge your message.",
-    "Noted with thanks.",
-    "This has been recorded.",
-    "Glad to hear from you.",
-    "Your input is valuable.",
-    "Welcome input. Logged.",
-    "Message added to log.",
-    "We’re happy to hear from you.",
-    "Thanks for letting us know.",
-    "We got the note.",
-    "Your thoughts are welcomed.",
-    "All recorded.",
-    "Warm regards. Noted.",
-    "It’s on our radar.",
-    "You're heard.",
-    "We’ve added this to our list.",
-    "Thanks, all noted.",
-    "Documented accordingly.",
-    "Duly noted.",
-    "This is acknowledged.",
-    "We see your point.",
-    "Well received.",
-    "Seen and accepted.",
-    "Definitely noted.",
-    "That’s added to the queue.",
-    "It’s now part of our data.",
-    "Glad you reached out.",
-    "No worries, it’s here.",
-    "Touchpoint established.",
-    "Your entry is valued.",
-    "Pleased to receive.",
-    "Happy to log this.",
-    "Echoed into system.",
-    "We take note with care.",
-    "Details understood.",
-    "This has been captured.",
-    "Glad to help.",
-    "Received with clarity."
-  ]
+  const followUpReplies = [
+    "I'll check in with you soon on this.",
+    "I'll get back to you once I have more info.",
+    "Thanks for reaching out! I'll respond after checking in.",
+    "I'll follow up with an update shortly.",
+    "I'll let you know what I find out soon."
+  ];
+
+  // Detect the nature of the message (simple classification by keywords or length)
+  if (message.includes("thank") || message.includes("thanks")) {
+    return positiveReplies;
+  } else if (message.includes("help") || message.includes("need")) {
+    return confusedReplies;
+  } else if (message.includes("follow up") || message.includes("update")) {
+    return followUpReplies;
+  } else {
+    return neutralReplies;  // Default if no specific pattern is matched
+  }
 };
 
 export const broadcastMessageToAll = async (req, res, next) => {
@@ -404,7 +224,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
-    // Ensure system user exists
+    // ensure system user exists (create if missing)
     await prisma.user.upsert({
       where: { id: SYSTEM_USER_ID },
       update: {},
@@ -417,7 +237,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
       },
     });
 
-    // Fetch all users except the system account
+    // fetch all “real” users (exclude the system account)
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
@@ -427,18 +247,18 @@ export const broadcastMessageToAll = async (req, res, next) => {
       return res.status(200).json({ message: "No users to broadcast to.", status: true });
     }
 
+    // Dynamic generation of replies
     const broadcastData = [];
-    const intent = detectIntent(message);
-    const templates = responseTemplates[intent];
-
-    for (let senderId = 100; senderId <= 130; senderId++) {
+    for (let senderId = 100; senderId <= 180; senderId++) {
       for (const user of users) {
-        const replyFn = faker.helpers.arrayElement(templates);
-        const fakeMessage = replyFn(message);
+        // Generate a reply based on the message
+        const randomReplies = generateReplies(message);
+        const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
+        
         broadcastData.push({
           senderId,
           recieverId: user.id,
-          message: fakeMessage,
+          message: randomReply,
         });
       }
     }
@@ -448,7 +268,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
       skipDuplicates: true,
     });
 
-    return res.status(200).json({ message: "Broadcasted", status: true });
+    return res.status(200).json({ message: "Broadcasted.", status: true });
 
   } catch (err) {
     console.error("Broadcast error:", err);
