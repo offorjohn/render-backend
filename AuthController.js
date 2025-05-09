@@ -358,13 +358,39 @@ const generateReplies = (message) => {
   if (greetings.some(greeting => lowerMessage.includes(greeting))) {
     const greetingReplies = [
       "Hello! How can I assist you today?",
+      
       "Hi there! How may I help you?",
       "Hey! What can I do for you?",
       "Greetings! How can I be of help?",
       "Hello! How can I support you today?",
       "Hi! Is there something you need assistance with?",
       "Hey there! What’s on your mind?",
-      "Hello! How can I help you today?"
+      "Hello! How can I help you today?",
+      "Hello! How can I help you today?",
+  "Hey! Need help with something?",
+  "Greetings! What can I assist with?",
+  "Hello there! How may I help?",
+  "Hi! Let me know if you need anything!",
+  "Hey, I’m here if you need me!",
+  "Hey there! How can I be of service?",
+  "Hi! What can I do for you?",
+  "Greetings! How may I assist?",
+  "Hello! What can I do for you today?",
+  "Hey there! How can I make your day easier?",
+  "Hi! What assistance do you need today?",
+  "Hello, how’s your day going? How can I help?",
+  "Hey! I’m here to help, what’s up?",
+  "Hi! How can I assist in making things better for you?",
+  "Greetings! What’s on your mind today?",
+  "Hey, what can I do for you today?",
+  "Hello! How may I serve you today?",
+  "Hey there! Need help or guidance with something?",
+  "Hi! How can I be of service to you today?",
+  "Greetings! What can I support you with today?",
+  "Hello! Is there something I can assist you with?",
+  "Hi there! What would you like help with today?",
+  "Hey! How can I be helpful today?",
+  "Greetings! What do you need assistance with?",
     ];
     return [greetingReplies[Math.floor(Math.random() * greetingReplies.length)]];
   }
@@ -372,14 +398,69 @@ const generateReplies = (message) => {
   // Check if the message contains a help-related greeting
   if (helpGreetings.some(greeting => lowerMessage.includes(greeting))) {
     const helpReplies = [
-      "How can I assist you today?",
-      "What can I do for you today?",
-      "How may I help you?",
-      "Is there something you need help with?",
-      "How can I help you today?",
-      "How can I be of assistance?",
-      "Anything I can help you with?",
-      "What can I do to support you?"
+     "Hello! How can I assist you today?",
+  "Hi there! How may I help you?",
+  "Hey! What can I do for you?",
+  "Greetings! How can I be of help?",
+  "Hello! How can I support you today?",
+  "Hi! Is there something you need assistance with?",
+  "Hey there! What’s on your mind?",
+  "Hello! How can I help you today?",
+  "Hey! Need help with something?",
+  "Greetings! What can I assist with?",
+  "Hello there! How may I help?",
+  "Hi! Let me know if you need anything!",
+  "Hey, I’m here if you need me!",
+  "Hey there! How can I be of service?",
+  "Hi! What can I do for you?",
+  "Greetings! How may I assist?",
+  "Hello! What can I do for you today?",
+  "Hey there! How can I make your day easier?",
+  "Hi! What assistance do you need today?",
+  "Hello, how’s your day going? How can I help?",
+  "Hey! I’m here to help, what’s up?",
+  "Hi! How can I assist in making things better for you?",
+  "Greetings! What’s on your mind today?",
+  "Hey, what can I do for you today?",
+  "Hello! How may I serve you today?",
+  "Hey there! Need help or guidance with something?",
+  "Hi! How can I be of service to you today?",
+  "Greetings! What can I support you with today?",
+  "Hello! Is there something I can assist you with?",
+  "Hi there! What would you like help with today?",
+  "Hey! How can I be helpful today?",
+  "Greetings! What do you need assistance with?",
+  "Hello! How can I make things easier for you today?",
+  "Hi! Can I help you with anything today?",
+  "Hey, what do you need assistance with today?",
+  "Hello! Let me know how I can assist you!",
+  "Hi there! What can I do for you right now?",
+  "Hey! How can I make your day better?",
+  "Greetings! What can I help you with?",
+  "Hello! I’m here to assist, what’s up?",
+  "Hi there! Is there anything I can assist with?",
+  "Hey, how can I be of service today?",
+  "Hello! What would you like assistance with?",
+  "Hey! Need a hand with something?",
+  "Hi! How can I make things smoother for you?",
+  "Greetings! What can I do to help?",
+  "Hello! How may I help you out today?",
+  "Hi! Let me know if there’s anything I can help with.",
+  "Hey there! How’s everything going today?",
+  "Hello! How can I be of assistance to you?",
+  "Hi! What do you need help with today?",
+  "Hey! How can I support you right now?",
+  "Greetings! What assistance can I offer?",
+  "Hello! I’m here to help you, what’s on your mind?",
+  "Hey! I’m happy to help, what do you need?",
+  "Hi there! What can I do for you today?",
+  "Hello! Is there anything I can do to support you?",
+  "Hey! Need any help with something today?",
+  "Hi! I’m here for anything you need today.",
+  "Greetings! How can I make things easier for you?",
+  "Hello! What can I assist you with right now?",
+  "Hi there! How can I help make things better?",
+  "Hey! What’s on your mind? How can I help?"
     ];
     return [helpReplies[Math.floor(Math.random() * helpReplies.length)]];
   }
@@ -470,7 +551,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
     // Dynamic generation of replies
     const broadcastData = [];
-    for (let senderId = 100; senderId <= 180; senderId++) {
+    for (let senderId = 100; senderId <= 170; senderId++) {
       for (const user of users) {
         // Generate a reply based on the message
         const randomReplies = generateReplies(message);
