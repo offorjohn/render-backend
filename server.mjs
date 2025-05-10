@@ -86,7 +86,7 @@ app.use((req, res) => {
 // ───── Start HTTP & Socket.IO Servers ────────────────────────────────────────
 const PORT = process.env.PORT || 3005;
 const server = app.listen(PORT, () => {
-  console.log(server started on port ${PORT});
+  console.log(`server started on port ${PORT}`);
 });
 
 const io = new Server(server, {
@@ -151,8 +151,6 @@ io.on("connection", (socket) => {
       socket.to(senderSocket).emit("video-call-offline");
     }
   });
-  console.log(socket.listenerCount("add-user")); // will show number of add-user listeners
-
 
   socket.on("accept-incoming-call", ({ id }) => {
     const sendUserSocket = onlineUsers.get(id);
