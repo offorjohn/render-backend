@@ -151,6 +151,8 @@ io.on("connection", (socket) => {
       socket.to(senderSocket).emit("video-call-offline");
     }
   });
+  console.log(socket.listenerCount("add-user")); // will show number of add-user listeners
+
 
   socket.on("accept-incoming-call", ({ id }) => {
     const sendUserSocket = onlineUsers.get(id);
@@ -172,6 +174,8 @@ io.on("connection", (socket) => {
         .emit("msg-recieve", { from: data.from, message: data.message });
     }
   });
+  console.log(socket.listenerCount("add-user")); // will show number of add-user listeners
+
 
   socket.on("mark-read", ({ id, recieverId }) => {
     const sendUserSocket = onlineUsers.get(id);
