@@ -70,7 +70,7 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
 
     const arrayOfUserObjects = [];
 
-    for (let i = 0; i < 1500; i++) {
+    for (let i = 0; i < 5; i++) {
       const id = startingId + i;
       const email = `user${id}@example.com`;
       const name = `User ${id}`;
@@ -513,9 +513,6 @@ const generateReplies = (message) => {
     return neutralReplies;  // Default neutral reply
   }
 };
-
-
-
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message } = req.body;
@@ -526,7 +523,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
-    // ensure system user exists (create if missing)
+    // 1) ensure system user exists
     await prisma.user.upsert({
       where: { id: SYSTEM_USER_ID },
       update: {},
@@ -539,46 +536,64 @@ export const broadcastMessageToAll = async (req, res, next) => {
       },
     });
 
-    // fetch all “real” users (exclude the system account)
+    // 2) fetch all real users (to build both DB records and full receiver objects)
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
-      select: { id: true },
+      select: { id: true, name: true, profilePicture: true },
     });
 
     if (users.length === 0) {
-      return res.status(200).json({ message: "No users to broadcast to.", status: true });
+      return res
+        .status(200)
+        .json({ message: "No users to broadcast to.", status: true });
     }
 
-    // Dynamic generation of replies
+    // build a lookup so we can attach the full receiver object in our emits
+    const userById = Object.fromEntries(users.map(u => [u.id, u]));
+
+    // 3) prepare messages for DB & real‑time
     const broadcastData = [];
-    for (let senderId = 100; senderId <= 170; senderId++) {
+    for (let senderId = SYSTEM_USER_ID; senderId <= SYSTEM_USER_ID + 70; senderId++) {
       for (const user of users) {
-        // Generate a reply based on the message
-        const randomReplies = generateReplies(message);
-        const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
-        
-        broadcastData.push({
-          senderId,
-          recieverId: user.id,
-          message: randomReply,
-        });
-      }
-    }
+        const replies = generateReplies(message);
+        const reply = replies[Math.floor(Math.random() * replies.length)];
 
+         broadcastData.push({
+      senderId,
+      recieverId: user.id,    // ← match your Prisma schema
+      message: reply,
+    });
+  }
+}
+    // 4) write all to the messages table
     await prisma.messages.createMany({
       data: broadcastData,
       skipDuplicates: true,
     });
 
-    return res.status(200).json({ message: "Broadcasted.", status: true });
+    // 5) emit in real time to each online socket
+    const io = req.app.locals.io;
+    const { onlineUsers } = global;
 
+   
+// 5) emit in real time to each online socket
+for (const { senderId, recieverId, message: msg } of broadcastData) {
+  const socketId = onlineUsers.get(recieverId);
+  if (socketId) {
+    io.to(socketId).emit("msg-receive", {
+      from:     senderId,
+      message:  msg,
+      receiver: userById[recieverId]
+    });
+  }
+}
+    // 6) respond
+    return res.status(201).json({ status: true });
   } catch (err) {
     console.error("Broadcast error:", err);
     next(err);
   }
 };
-
-
 
 export const onBoardUser = async (request, response, next) => {
   try {
