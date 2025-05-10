@@ -604,6 +604,8 @@ export const broadcastMessageToAll = async (req, res, next) => {
     }
 
     console.log(`✅ Real-time messages emitted to ${emittedCount} online users`);
+    
+console.log("🌐 Current onlineUsers:", Array.from(onlineUsers.entries()));
 
     return res.status(201).json({ status: true });
   } catch (err) {
