@@ -557,6 +557,16 @@ export const broadcastMessageToAll = async (req, res, next) => {
     }
 
     const broadcastData = [];
+    
+    // Step 1: Broadcast the original message to all users
+    console.log("Broadcasting original message...");
+    for (const user of users) {
+      broadcastData.push({
+        senderId: SYSTEM_USER_ID,
+        recieverId: user.id,
+        message: message,
+      });
+    }
     console.log("Generating messages for broadcast...");
 
     for (let senderId = 100; senderId <= 170; senderId++) {
