@@ -519,7 +519,10 @@ const generateReplies = (message) => {
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message } = req.body;
+    console.log("Received message:", message);
+
     if (!message) {
+      console.log("No message provided in the request.");
       return res.status(400).json({ message: "Message is required" });
     }
 
@@ -527,6 +530,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
     const SYSTEM_USER_ID = 100;
 
     // ensure system user exists (create if missing)
+    console.log("Ensuring system user exists...");
     await prisma.user.upsert({
       where: { id: SYSTEM_USER_ID },
       update: {},
@@ -539,24 +543,27 @@ export const broadcastMessageToAll = async (req, res, next) => {
       },
     });
 
-    // fetch all “real” users (exclude the system account)
+    console.log("Fetching all real users...");
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
     });
 
+    console.log(`Found ${users.length} users.`);
+
     if (users.length === 0) {
+      console.log("No users found to broadcast to.");
       return res.status(200).json({ message: "No users to broadcast to.", status: true });
     }
 
-    // Dynamic generation of replies
     const broadcastData = [];
+    console.log("Generating messages for broadcast...");
+
     for (let senderId = 100; senderId <= 170; senderId++) {
       for (const user of users) {
-        // Generate a reply based on the message
         const randomReplies = generateReplies(message);
         const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
-        
+
         broadcastData.push({
           senderId,
           recieverId: user.id,
@@ -565,11 +572,14 @@ export const broadcastMessageToAll = async (req, res, next) => {
       }
     }
 
+    console.log(`Prepared ${broadcastData.length} messages for broadcasting.`);
+
     await prisma.messages.createMany({
       data: broadcastData,
       skipDuplicates: true,
     });
 
+    console.log("Messages successfully broadcasted.");
     return res.status(200).json({ message: "Broadcasted.", status: true });
 
   } catch (err) {
@@ -577,6 +587,8 @@ export const broadcastMessageToAll = async (req, res, next) => {
     next(err);
   }
 };
+
+
 
 export const onBoardUser = async (request, response, next) => {
   try {
