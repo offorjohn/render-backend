@@ -514,8 +514,7 @@ const generateReplies = (message) => {
   } else {
     return neutralReplies;  // Default neutral reply
   }
-};
-export const broadcastMessageToAll = async (req, res, next) => {
+};export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message } = req.body;
     if (!message) {
@@ -596,7 +595,6 @@ for (const { senderId, recieverId, message: msg } of broadcastData) {
     next(err);
   }
 };
-
 export const onBoardUser = async (request, response, next) => {
   try {
     const {
