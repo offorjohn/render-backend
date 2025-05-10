@@ -98,6 +98,9 @@ const io = new Server(server, {
   }
 });
 
+// make io available to all route‑handlers
+app.locals.io = io;
+
 
 // track online users
 
