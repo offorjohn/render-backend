@@ -514,17 +514,20 @@ const generateReplies = (message) => {
   } else {
     return neutralReplies;  // Default neutral reply
   }
-};export const broadcastMessageToAll = async (req, res, next) => {
+};
+export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message } = req.body;
     if (!message) {
+      console.log("❌ No message provided in the request body");
       return res.status(400).json({ message: "Message is required" });
     }
 
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
-    // 1) ensure system user exists
+    console.log("🔄 Upserting system user...");
+
     await prisma.user.upsert({
       where: { id: SYSTEM_USER_ID },
       update: {},
@@ -537,64 +540,80 @@ const generateReplies = (message) => {
       },
     });
 
-    // 2) fetch all real users (to build both DB records and full receiver objects)
+    console.log("✅ System user ensured");
+
+    console.log("🔍 Fetching all users except system user...");
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true, name: true, profilePicture: true },
     });
 
     if (users.length === 0) {
+      console.log("⚠️ No users found to broadcast to.");
       return res
         .status(200)
         .json({ message: "No users to broadcast to.", status: true });
     }
 
-    // build a lookup so we can attach the full receiver object in our emits
+    console.log(`👥 Found ${users.length} users`);
+
     const userById = Object.fromEntries(users.map(u => [u.id, u]));
 
-    // 3) prepare messages for DB & real‑time
+    console.log("🛠️ Preparing broadcast messages...");
     const broadcastData = [];
+
     for (let senderId = SYSTEM_USER_ID; senderId <= SYSTEM_USER_ID + 70; senderId++) {
       for (const user of users) {
         const replies = generateReplies(message);
         const reply = replies[Math.floor(Math.random() * replies.length)];
 
-         broadcastData.push({
-      senderId,
-      recieverId: user.id,    // ← match your Prisma schema
-      message: reply,
-    });
-  }
-}
-    // 4) write all to the messages table
+        broadcastData.push({
+          senderId,
+          recieverId: user.id,
+          message: reply,
+        });
+      }
+    }
+
+    console.log(`📦 Prepared ${broadcastData.length} messages`);
+
+    console.log("💾 Inserting messages into the database...");
     await prisma.messages.createMany({
       data: broadcastData,
       skipDuplicates: true,
     });
 
-    // 5) emit in real time to each online socket
+    console.log("✅ Messages inserted");
+
     const io = req.app.locals.io;
     const { onlineUsers } = global;
 
-   
-// 5) emit in real time to each online socket
-for (const { senderId, recieverId, message: msg } of broadcastData) {
-  const socketId = onlineUsers.get(recieverId);
-  if (socketId) {
-    io.to(socketId).emit("msg-receive", {
-      from:     senderId,
-      message:  msg,
-      receiver: userById[recieverId]
-    });
-  }
-}
-    // 6) respond
+    console.log("📡 Emitting messages in real-time...");
+    let emittedCount = 0;
+
+    for (const { senderId, recieverId, message: msg } of broadcastData) {
+      const socketId = onlineUsers.get(recieverId);
+      if (socketId) {
+        io.to(socketId).emit("msg-receive", {
+          from: senderId,
+          message: msg,
+          receiver: userById[recieverId],
+        });
+        emittedCount++;
+      }
+    }
+
+    console.log(`✅ Real-time messages emitted to ${emittedCount} online users`);
+
     return res.status(201).json({ status: true });
   } catch (err) {
-    console.error("Broadcast error:", err);
+    console.error("❌ Broadcast error:", err);
     next(err);
   }
 };
+
+
+
 export const onBoardUser = async (request, response, next) => {
   try {
     const {
