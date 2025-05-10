@@ -531,6 +531,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
     // ensure system user exists (create if missing)
     console.log("Ensuring system user exists...");
+    
     await prisma.user.upsert({
       where: { id: SYSTEM_USER_ID },
       update: {},
