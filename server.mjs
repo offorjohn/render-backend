@@ -97,6 +97,10 @@ const io = new Server(server, {
 });
 
 
+// Make io available in your routes:
+app.locals.io = io;
+
+
 // track online users
 
 global.onlineUsers = new Map();
