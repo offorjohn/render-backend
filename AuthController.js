@@ -563,7 +563,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
     console.log("Broadcasting original message...");
     for (const user of users) {
       broadcastData.push({
-        senderId: SYSTEM_USER_ID,
+        senderId: 104,
         recieverId: user.id,
         message: message,
       });
