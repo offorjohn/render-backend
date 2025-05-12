@@ -1,7 +1,9 @@
 import getPrismaInstance from "./PrismaClient.js";
 import { generateToken04 } from "./TokenGenerator.js";
+
 import { faker } from "@faker-js/faker";
-let savedUserId = null; // Variable to store the userId outside the function
+
+
 
 export const checkUser = async (request, response, next) => {
   try {
@@ -14,26 +16,12 @@ export const checkUser = async (request, response, next) => {
 
     if (!user) {
       return response.json({ msg: "User not found", status: false });
-    } else {
-      // Extracting the ID and saving it in a variable
-      const userId = user.id;
-      
-      // Logging the userId
-      console.log("User ID:", userId);
-      
-      // Save the userId to a variable outside
-      savedUserId = userId;
-
-      return response.json({ msg: "User Found", status: true, data: user, userId });
-    }
+    } else
+      return response.json({ msg: "User Found", status: true, data: user });
   } catch (error) {
     next(error);
   }
 };
-
-// You can access the savedUserId variable outside the function
-console.log("Saved User ID outside the function:", savedUserId);
-
 export const deleteUser = async (req, res, next) => {
   try {
     3;
@@ -563,7 +551,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
     });
-    console.log(Found ${users.length} users.);
+    console.log(`Found ${users.length} users.`);
 
     if (users.length === 0) {
       console.log("No users found to broadcast to.");
@@ -577,7 +565,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
     for (const user of users) {
       await prisma.messages.create({
         data: {
-          senderId: 293,
+          senderId: user.id,
           recieverId: user.id,
           message: message,
         },
@@ -586,7 +574,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
     // Step 2: send “replies” from senderIds 100–170 individually
     console.log("Broadcasting random replies individually...");
-    for (let senderId = 100; senderId <= 170; senderId++) {
+    for (let senderId = 3; senderId <= 30; senderId++) {
       for (const user of users) {
         const randomReplies = generateReplies(message);
         const randomReply =
