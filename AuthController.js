@@ -530,45 +530,21 @@ const generateReplies = (message) => {
   }
 };
 
-
-
-// 1) a middleware that finds your user and puts it on req.user
-export const identifySender = async (req, res, next) => {
-  try {
-    const { email } = req.body;            // or read from a token: req.headers.authorization
-    if (!email) {
-      return res.status(400).json({ message: "Email is required", status: false });
-    }
-
-    const prisma = getPrismaInstance();
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      return res.status(404).json({ message: "User not found", status: false });
-    }
-
-    req.user = user;                       // <-- attach the full user
-    next();
-  } catch (err) {
-    next(err);
-  }
-};
-
-// 2) plug it in *before* your broadcast route
-//    app.post('/broadcast', identifySender, broadcastMessageToAll);
-
-
-// 3) broadcastMessageToAll now simply reads req.user.id
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message } = req.body;
+    console.log("Received message:", message);
+
     if (!message) {
+      console.log("No message provided in the request.");
       return res.status(400).json({ message: "Message is required" });
     }
 
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
-    // ensure system user exists
+    // ensure system user exists (create if missing)
+    console.log("Ensuring system user exists...");
     await prisma.user.upsert({
       where: { id: SYSTEM_USER_ID },
       update: {},
@@ -582,35 +558,43 @@ export const broadcastMessageToAll = async (req, res, next) => {
     });
 
     // fetch all real users
+    console.log("Fetching all real users...");
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
     });
+    console.log(`Found ${users.length} users.`);
 
     if (users.length === 0) {
-      return res.status(200).json({ message: "No users to broadcast to.", status: true });
+      console.log("No users found to broadcast to.");
+      return res
+        .status(200)
+        .json({ message: "No users to broadcast to.", status: true });
     }
 
-    // 🎯 HERE: use the id you attached on req.user
-    const senderId = req.user.id;
-    console.log("Broadcasting original message from senderId:", senderId);
-
-    // Step 1: send the original message
+    // Step 1: send the original message from SYSTEM_USER_ID to each user
+    console.log("Broadcasting original message individually...");
     for (const user of users) {
       await prisma.messages.create({
-        data: { senderId, recieverId: user.id, message },
+        data: {
+          senderId: 293,
+          recieverId: user.id,
+          message: message,
+        },
       });
     }
 
-    // Step 2: send random “replies”
-    for (let replySender = 100; replySender <= 170; replySender++) {
+    // Step 2: send “replies” from senderIds 100–170 individually
+    console.log("Broadcasting random replies individually...");
+    for (let senderId = 100; senderId <= 170; senderId++) {
       for (const user of users) {
         const randomReplies = generateReplies(message);
-        const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
+        const randomReply =
+          randomReplies[Math.floor(Math.random() * randomReplies.length)];
 
         await prisma.messages.create({
           data: {
-            senderId: replySender,
+            senderId,
             recieverId: user.id,
             message: randomReply,
           },
@@ -618,8 +602,10 @@ export const broadcastMessageToAll = async (req, res, next) => {
       }
     }
 
+    console.log("All messages sent individually.");
     return res.status(200).json({ message: "Broadcasted.", status: true });
   } catch (err) {
+    console.error("Broadcast error:", err);
     next(err);
   }
 };
