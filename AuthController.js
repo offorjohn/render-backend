@@ -547,50 +547,43 @@ export const broadcastMessageToAll = async (req, res, next) => {
         .json({ message: "No users to broadcast to.", status: true });
     }
 
-    // Step 1: Prepare & send the original message in bulk
-    console.log("Preparing original messages...");
-    const originalMessages = users.map((user) => ({
-      senderId: senderId,   // from request
-      recieverId: user.id,
-      message: message,
-    }));
+    // Step 1: Send the original message
+    console.log("Broadcasting original message individually...");
+    for (const user of users) {
+      await prisma.messages.create({
+        data: {
+          senderId: senderId, // From request
+          recieverId: user.id,
+          message: message,
+        },
+      });
+    }
 
-    await prisma.messages.createMany({ data: originalMessages });
-    console.log("Original messages sent.");
-
-    // Step 2: Prepare & send random replies in bulk
-    console.log("Preparing random-reply messages...");
-
-    const MIN_BOT_SENDER_ID = 101;
-    const MAX_BOT_SENDER_ID = 110; // adjust as needed
-
-    const replyMessages = [];
-
-    for (let botId = MIN_BOT_SENDER_ID; botId <= MAX_BOT_SENDER_ID; botId++) {
+    // Step 2: Send random replies from bot/system user range
+    console.log("Broadcasting random replies individually...");
+    for (let replySenderId = 101; replySenderId <= 110; replySenderId++) {
       for (const user of users) {
         const randomReplies = generateReplies(message);
         const randomReply =
           randomReplies[Math.floor(Math.random() * randomReplies.length)];
 
-        replyMessages.push({
-          senderId: botId,
-          recieverId: user.id,
-          message: randomReply,
+        await prisma.messages.create({
+          data: {
+            senderId: replySenderId,
+            recieverId: user.id,
+            message: randomReply,
+          },
         });
       }
     }
 
-    // Bulk-insert all replies
-    await prisma.messages.createMany({ data: replyMessages });
-    console.log("Random replies sent.");
-
+    console.log("All messages sent individually.");
     return res.status(200).json({ message: "Broadcasted.", status: true });
   } catch (err) {
     console.error("Broadcast error:", err);
     next(err);
   }
 };
-
 
 
 export const onBoardUser = async (request, response, next) => {
