@@ -556,15 +556,15 @@ export const broadcastMessageToAll = async (req, res, next) => {
     for (const user of users) {
       
       
-      await prisma.messages.create({
-        data: {
-          senderId: 3,
-          recieverId: user.id,
-          message: message,
-        },
-      });
-    }
+     const { message, senderId } = req.body;
 
+await prisma.messages.create({
+  data: {
+    senderId: senderId, // <-- from request
+    recieverId: user.id,
+    message: message,
+  },
+});
     // Step 2: send “replies” from senderIds 100–170 individually
     console.log("Broadcasting random replies individually...");
     for (let senderId = 101; senderId <= 109; senderId++) {
