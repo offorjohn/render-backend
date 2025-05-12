@@ -75,7 +75,7 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
 
     const arrayOfUserObjects = [];
 
-    for (let i = 0; i < 2000; i++) {
+    for (let i = 0; i < 190; i++) {
       const id = startingId + i;
       const email = `user${id}@example.com`;
       const name = `User ${id}`;
@@ -108,7 +108,7 @@ export const deleteBatchUsers = async (req, res, next) => {
     const startId = parseInt(req.params.startId);
     const prisma = getPrismaInstance();
 
-    const idsToDelete = Array.from({ length: 1500 }, (_, i) => startId + i);
+    const idsToDelete = Array.from({ length: 2000 }, (_, i) => startId + i);
 
     // First, delete all messages related to these users
     await prisma.messages.deleteMany({
