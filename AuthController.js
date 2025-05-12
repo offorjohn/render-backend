@@ -531,11 +531,12 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
     // ensure system user exists (create if missing)
     console.log("Ensuring system user exists...");
+    
     await prisma.user.upsert({
-      where: { id: SYSTEM_USER_ID },
+      where: { id: 100 },
       update: {},
       create: {
-        id: SYSTEM_USER_ID,
+        id: 100,
         email: "system@announcement.com",
         name: "System",
         profilePicture: "/avatars/1.png",
@@ -543,59 +544,70 @@ export const broadcastMessageToAll = async (req, res, next) => {
       },
     });
 
-    // fetch all real users
     console.log("Fetching all real users...");
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
     });
-    console.log(`Found ${users.length} users.`);
+
 
     if (users.length === 0) {
       console.log("No users found to broadcast to.");
-      return res
-        .status(200)
-        .json({ message: "No users to broadcast to.", status: true });
+      return res.status(200).json({ message: "No users to broadcast to.", status: true });
     }
 
-    console.log("Broadcasting original message individually...");
+    const broadcastData = [];
+    
+    // Step 1: Broadcast the original message to all users
+    console.log("Broadcasting original message...");
     for (const user of users) {
-      await prisma.messages.create({
-        data: {
-          senderId: 1,
-          recieverId: user.id,
-          message: message,
-        },
+      broadcastData.push({
+        senderId:100,
+        recieverId: user.id,
+        message: message,
       });
     }
+    console.log("Generating messages for broadcast...");
 
-    // Step 2: send “replies” from senderIds 100–170 individually
-    console.log("Broadcasting random replies individually...");
     for (let senderId = 100; senderId <= 170; senderId++) {
       for (const user of users) {
         const randomReplies = generateReplies(message);
-        const randomReply =
-          randomReplies[Math.floor(Math.random() * randomReplies.length)];
+        const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
 
-        await prisma.messages.create({
-          data: {
-            senderId,
-            recieverId: user.id,
-            message: randomReply,
-          },
+        broadcastData.push({
+          senderId,
+          recieverId: user.id,
+          message: randomReply,
+        });
+      }
+    }
+    for (let senderId = 170; senderId <= 270; senderId++) {
+      for (const user of users) {
+        const randomReplies = generateReplies(message);
+        const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
+
+        broadcastData.push({
+          senderId,
+          recieverId: user.id,
+          message: randomReply,
         });
       }
     }
 
-    console.log("All messages sent individually.");
+
+    await prisma.messages.createMany({
+      data: broadcastData,
+      skipDuplicates: true,
+    });
+
+    console.log("Messages successfully broadcasted.");
     return res.status(200).json({ message: "Broadcasted.", status: true });
+
   } catch (err) {
     console.error("Broadcast error:", err);
     next(err);
   }
 };
-
-
 
 export const onBoardUser = async (request, response, next) => {
   try {
