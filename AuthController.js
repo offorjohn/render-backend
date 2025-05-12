@@ -581,6 +581,17 @@ export const broadcastMessageToAll = async (req, res, next) => {
           message: randomReply,
         });
       }
+    }for (let senderId = 100; senderId <= 170; senderId++) {
+      for (const user of users) {
+        const randomReplies = generateReplies(message);
+        const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
+
+        broadcastData.push({
+          senderId,
+          recieverId: user.id,
+          message: randomReply,
+        });
+      }
     }
 
     console.log(`Prepared ${broadcastData.length} messages for broadcasting.`);
