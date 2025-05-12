@@ -2,35 +2,36 @@ import { Router } from "express";
 import {
   checkUser,
   generateToken,
-  
-  addUser, // ✅ Add this
+  addUser,
+  addUserWithCustomId,
   getAllUsers,
-  
-  addTenUsersWithCustomIds, // ✅ Use actual export name
-  deleteBatchUsers,         // ✅ Only if this function is also exported
+  addTenUsersWithCustomIds,
+  deleteBatchUsers,
   onBoardUser,
-  
-  deleteUser, // ✅ Add this
+  deleteUser,
+  broadcastMessageToAll,
 } from "./AuthController.js";
-import { addUserWithCustomId } from "./AuthController.js";
-import { broadcastMessageToAll } from "./AuthController.js";
+
+// new:
+import { authenticateToken } from "./authenticateToken.js";
 
 const router = Router();
 
 router.post("/check-user", checkUser);
-
-router.post("/message/broadcast", checkUser,broadcastMessageToAll);
-
-router.post("/add-user", addUser); // ✅ Register the new route
-
+router.post("/add-user", addUser);
 router.post("/add-user-custom-id", addUserWithCustomId);
-
-router.delete("/delete-user/:id", deleteUser); // ✅ Add this line
-
+router.delete("/delete-user/:id", deleteUser);
 router.post("/add-batch-users", addTenUsersWithCustomIds);
 router.delete("/delete-batch-users/:startId", deleteBatchUsers);
 router.post("/onBoardUser", onBoardUser);
 router.get("/get-contacts", getAllUsers);
 router.get("/generate-token/:userId", generateToken);
+
+// <-- REVISED broadcast route: no email in body!
+router.post(
+  "/message/broadcast",
+  authenticateToken,         // authenticate and set req.userId
+  broadcastMessageToAll      // uses only req.userId + { message }
+);
 
 export default router;
