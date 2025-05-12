@@ -554,9 +554,11 @@ export const broadcastMessageToAll = async (req, res, next) => {
     // Step 1: send the original message from SYSTEM_USER_ID to each user
     console.log("Broadcasting original message individually...");
     for (const user of users) {
+      
+      
       await prisma.messages.create({
         data: {
-          senderId: 1,
+          senderId: 3,
           recieverId: user.id,
           message: message,
         },
