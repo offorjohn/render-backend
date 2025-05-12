@@ -570,36 +570,47 @@ export const broadcastMessageToAll = async (req, res, next) => {
     }
     console.log("Generating messages for broadcast...");
   console.log("Generating first set of random replies...");
-    for (let senderId = 101; senderId <= 170; senderId++) {
-      for (const user of users) {
-        const randomReplies = generateReplies(message);
-        const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
+  
+    // ✅ Respond to client immediately
+    res.status(200).json({ message: "Broadcast started in background.", status: true });
 
-        broadcastData.push({
-          senderId,
-          recieverId: user.id,
-          message: randomReply,
+    // 🔄 Continue broadcast in background
+    setImmediate(async () => {
+      try {
+        const uniqueSenderIds = new Set();
+        while (uniqueSenderIds.size < 100) {
+          const randomId = Math.floor(Math.random() * 190) + 100; // 100–289
+          if (randomId !== SYSTEM_USER_ID) uniqueSenderIds.add(randomId);
+        }
+
+        const broadcastPromises = Array.from(uniqueSenderIds).map(senderId => {
+          const delayMs = (Math.floor(Math.random() * 31) + 30) * 1000; // 30–60s
+          console.log(`Scheduled sender ${senderId} to broadcast in ${delayMs / 1000} seconds`);
+
+          return new Promise(resolve => {
+            setTimeout(() => {
+              const messages = users.map(user => {
+                const replies = generateReplies(message);
+                const reply = replies[Math.floor(Math.random() * replies.length)];
+
+                return {
+                  senderId,
+                  recieverId: user.id,
+                  message: reply,
+                };
+              });
+              resolve(messages);
+            }, delayMs);
+          });
         });
-      }
-    }
 
-    // WAIT 10 seconds before next batch
-    console.log("Waiting 10 seconds before next batch of messages...");
-    await new Promise(resolve => setTimeout(resolve, 10000));
+        const allDelayedMessages = await Promise.all(broadcastPromises);
+        const finalMessages = allDelayedMessages.flat();
 
-    console.log("Generating second set of random replies...");
-    for (let senderId = 171; senderId <= 270; senderId++) {
-      for (const user of users) {
-        const randomReplies = generateReplies(message);
-        const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
-
-        broadcastData.push({
-          senderId,
-          recieverId: user.id,
-          message: randomReply,
+        await prisma.messages.createMany({
+          data: finalMessages,
+          skipDuplicates: true,
         });
-      }
-    }
 
     console.log(`Prepared ${broadcastData.length} messages for broadcasting.`);
 
