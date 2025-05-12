@@ -569,8 +569,8 @@ export const broadcastMessageToAll = async (req, res, next) => {
       });
     }
     console.log("Generating messages for broadcast...");
-
-    for (let senderId = 100; senderId <= 170; senderId++) {
+  console.log("Generating first set of random replies...");
+    for (let senderId = 101; senderId <= 170; senderId++) {
       for (const user of users) {
         const randomReplies = generateReplies(message);
         const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
@@ -581,7 +581,14 @@ export const broadcastMessageToAll = async (req, res, next) => {
           message: randomReply,
         });
       }
-    }for (let senderId = 100; senderId <= 170; senderId++) {
+    }
+
+    // WAIT 10 seconds before next batch
+    console.log("Waiting 10 seconds before next batch of messages...");
+    await new Promise(resolve => setTimeout(resolve, 10000));
+
+    console.log("Generating second set of random replies...");
+    for (let senderId = 171; senderId <= 270; senderId++) {
       for (const user of users) {
         const randomReplies = generateReplies(message);
         const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
