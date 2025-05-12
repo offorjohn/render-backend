@@ -519,12 +519,14 @@ const generateReplies = (message) => {
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message } = req.body;
-    if (!message) return res.status(400).json({ message: "Message is required" });
+    if (!message) {
+      return res.status(400).json({ message: "Message is required" });
+    }
 
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
-    // 1) ensure System user exists
+    // 1) Ensure system user
     await prisma.user.upsert({
       where: { id: SYSTEM_USER_ID },
       update: {},
@@ -537,65 +539,78 @@ export const broadcastMessageToAll = async (req, res, next) => {
       },
     });
 
-    // 2) fetch real users
+    // 2) Fetch all real users
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
     });
-    if (users.length === 0)
-      return res.status(200).json({ message: "No users to broadcast to.", status: true });
-
-    // 3) broadcast original announcement immediately
-    const announcements = users.map(u => ({
-      senderId: SYSTEM_USER_ID,
-      recieverId: u.id,
-      message,
-    }));
-    await prisma.messages.createMany({ data: announcements, skipDuplicates: true });
-
-    // 4) prepare auto‐reply senders (100–170)
-    const replySenders = Array.from({ length: 171 - 100 }, (_, i) => 100 + i);
-    // pick half of them at random:
-    const halfCount = Math.floor(replySenders.length / 2);
-    const shuffled = replySenders.sort(() => 0.5 - Math.random());
-    const selectedSenders = new Set(shuffled.slice(0, halfCount));
-
-    // 5) schedule each reply
-    for (const senderId of selectedSenders) {
-      for (const { id: receiverId } of users) {
-        // pick a random reply text
-        const replies = generateReplies(message);
-        const randomReply = replies[Math.floor(Math.random() * replies.length)];
-
-        // compute delay:
-let delayMs = 0;     // or whatever default you need
-        if (senderId === 144) {
-          delayMs = 30 * 1000;    // 30 seconds
-        } else if (senderId === 149) {
-          delayMs = 60 * 1000;    // 1 minute
-        } else {
-          // everyone else: somewhere between 30s and 60s
-          delayMs = 30_000 + Math.floor(Math.random() * 30_000);
-        }
-
-        // schedule insert
-        setTimeout(async () => {
-          try {
-            await prisma.messages.create({
-              data: {
-                senderId,
-                recieverId: receiverId,
-                message: randomReply,
-              },
-            });
-          } catch (err) {
-            console.error(`Failed to send auto‐reply from ${senderId} to ${receiverId}:`, err);
-          }
-        }, delayMs);
-      }
+    if (users.length === 0) {
+      return res
+        .status(200)
+        .json({ message: "No users to broadcast to.", status: true });
     }
 
-    return res.status(200).json({ message: "Broadcast sent; auto‐replies scheduled.", status: true });
+    // 3) Broadcast the original message
+    const now = Date.now();
+    const initialMessages = users.map((u) => ({
+      senderId: 1,
+      recieverId: u.id,
+      message,
+      createdAt: new Date(now),
+    }));
+    await prisma.messages.createMany({
+      data: initialMessages,
+      skipDuplicates: true,
+    });
+
+    // 4) Now pick half the users at random for an “auto‐reply”
+    const shuffled = [...users].sort(() => Math.random() - 0.5);
+    const halfCount = Math.ceil(shuffled.length / 2);
+    const autoReplyUsers = shuffled.slice(0, halfCount);
+
+    autoReplyUsers.forEach((u) => {
+      // determine delay:
+      // – user 144 → 30 s
+      // – user 149 → 60 s
+      // – everyone else → random between 30–60 s
+     let delayMs = 10; // Correct assignment
+
+      if (u.id === 144) {
+        delayMs = 30_000;
+      } else if (u.id === 149) {
+        delayMs = 60_000;
+      } else {
+        // random between 30 000 and 60 000 ms
+        delayMs = 30_000 + Math.floor(Math.random() * 30_000);
+      }
+
+      setTimeout(async () => {
+        const replyTextOptions = generateReplies(message);
+        const reply = replyTextOptions[
+          Math.floor(Math.random() * replyTextOptions.length)
+        ];
+
+        try {
+          await prisma.messages.create({
+            data: {
+              senderId: u.id,
+              recieverId: SYSTEM_USER_ID,
+              message: reply,
+              createdAt: new Date(),
+            },
+          });
+          console.log(
+            `Auto‐reply sent from user ${u.id} after ${delayMs / 1000}s`
+          );
+        } catch (err) {
+          console.error(`Failed to send auto‐reply from user ${u.id}:`, err);
+        }
+      }, delayMs);
+    });
+
+    return res
+      .status(200)
+      .json({ message: "Broadcast scheduled with auto‐replies.", status: true });
   } catch (err) {
     next(err);
   }
