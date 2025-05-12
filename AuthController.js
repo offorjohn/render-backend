@@ -519,19 +519,12 @@ const generateReplies = (message) => {
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message } = req.body;
-    console.log("Received message:", message);
-
-    if (!message) {
-      console.log("No message provided in the request.");
-      return res.status(400).json({ message: "Message is required" });
-    }
+    if (!message) return res.status(400).json({ message: "Message is required" });
 
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
-    // ensure system user exists (create if missing)
-    console.log("Ensuring system user exists...");
-    
+    // 1) ensure System user exists
     await prisma.user.upsert({
       where: { id: SYSTEM_USER_ID },
       update: {},
@@ -544,61 +537,69 @@ export const broadcastMessageToAll = async (req, res, next) => {
       },
     });
 
-    console.log("Fetching all real users...");
+    // 2) fetch real users
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
     });
-
-    console.log(`Found ${users.length} users.`);
-
-    if (users.length === 0) {
-      console.log("No users found to broadcast to.");
+    if (users.length === 0)
       return res.status(200).json({ message: "No users to broadcast to.", status: true });
-    }
 
-    const broadcastData = [];
-    
-    // Step 1: Broadcast the original message to all users
-    console.log("Broadcasting original message...");
-    for (const user of users) {
-      broadcastData.push({
-        senderId: 1,
-        recieverId: user.id,
-        message: message,
-      });
-    }
-    console.log("Generating messages for broadcast...");
+    // 3) broadcast original announcement immediately
+    const announcements = users.map(u => ({
+      senderId: SYSTEM_USER_ID,
+      recieverId: u.id,
+      message,
+    }));
+    await prisma.messages.createMany({ data: announcements, skipDuplicates: true });
 
-    for (let senderId = 100; senderId <= 170; senderId++) {
-      for (const user of users) {
-        const randomReplies = generateReplies(message);
-        const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
+    // 4) prepare auto‐reply senders (100–170)
+    const replySenders = Array.from({ length: 171 - 100 }, (_, i) => 100 + i);
+    // pick half of them at random:
+    const halfCount = Math.floor(replySenders.length / 2);
+    const shuffled = replySenders.sort(() => 0.5 - Math.random());
+    const selectedSenders = new Set(shuffled.slice(0, halfCount));
 
-        broadcastData.push({
-          senderId,
-          recieverId: user.id,
-          message: randomReply,
-        });
+    // 5) schedule each reply
+    for (const senderId of selectedSenders) {
+      for (const { id: receiverId } of users) {
+        // pick a random reply text
+        const replies = generateReplies(message);
+        const randomReply = replies[Math.floor(Math.random() * replies.length)];
+
+        // compute delay:
+let delayMs = 0;     // or whatever default you need
+        if (senderId === 144) {
+          delayMs = 30 * 1000;    // 30 seconds
+        } else if (senderId === 149) {
+          delayMs = 60 * 1000;    // 1 minute
+        } else {
+          // everyone else: somewhere between 30s and 60s
+          delayMs = 30_000 + Math.floor(Math.random() * 30_000);
+        }
+
+        // schedule insert
+        setTimeout(async () => {
+          try {
+            await prisma.messages.create({
+              data: {
+                senderId,
+                recieverId: receiverId,
+                message: randomReply,
+              },
+            });
+          } catch (err) {
+            console.error(`Failed to send auto‐reply from ${senderId} to ${receiverId}:`, err);
+          }
+        }, delayMs);
       }
     }
 
-    console.log(`Prepared ${broadcastData.length} messages for broadcasting.`);
-
-    await prisma.messages.createMany({
-      data: broadcastData,
-      skipDuplicates: true,
-    });
-
-    console.log("Messages successfully broadcasted.");
-    return res.status(200).json({ message: "Broadcasted.", status: true });
-
+    return res.status(200).json({ message: "Broadcast sent; auto‐replies scheduled.", status: true });
   } catch (err) {
-    console.error("Broadcast error:", err);
     next(err);
   }
 };
-
 
 
 export const onBoardUser = async (request, response, next) => {
