@@ -2,11 +2,12 @@ import getPrismaInstance from "./PrismaClient.js";
 import { generateToken04 } from "./TokenGenerator.js";
 import { faker } from "@faker-js/faker";
 
+let savedUserId = null; // Declare the global variable at the top
 
 export const checkUser = async (request, response, next) => {
   try {
     const { email } = request.body;
-    console.log("Received email:", email);  // Log the email received in the request
+    console.log("Received email:", email);
 
     if (!email) {
       return response.json({ msg: "Email is required", status: false });
@@ -16,18 +17,27 @@ export const checkUser = async (request, response, next) => {
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      console.log("User not found in DB");  // Log if user is not found
+      console.log("User not found in DB");
       return response.json({ msg: "User not found", status: false });
     } else {
       const userId = user.id;
-      savedUserId = userId;
+      savedUserId = userId; // Set the global variable here
       console.log("User ID:", userId);
       return response.json({ msg: "User Found", status: true, data: user, userId });
+      
+
+    request.userId = user.id; // ✅ attach userId to the request
+    console.log("User ID:", user.id);
+
+    next(); // ✅ continue to next handler
     }
   } catch (error) {
     next(error);
   }
 };
+
+// You can now access savedUserId outside of the function:
+console.log("Saved User ID outside the function:", savedUserId);
 
 export const deleteUser = async (req, res, next) => {
   try {
