@@ -1,20 +1,22 @@
 import getPrismaInstance from "./PrismaClient.js";
 import { generateToken04 } from "./TokenGenerator.js";
 import { faker } from "@faker-js/faker";
-
-export const checkUser = async (request, response, next) => {
+export const checkUser = async (req, res, next) => {
   try {
-    const { email } = request.body;
+    const { email } = req.body;
     if (!email) {
-      return response.json({ msg: "Email is required", status: false });
+      return res.json({ msg: "Email is required", status: false });
     }
     const prisma = getPrismaInstance();
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      return response.json({ msg: "User not found", status: false });
-    } else
-      return response.json({ msg: "User Found", status: true, data: user });
+      return res.json({ msg: "User not found", status: false });
+    }
+
+    // stash the found user’s id on the request object
+    req.userId = user.id;
+    next(); 
   } catch (error) {
     next(error);
   }
