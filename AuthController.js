@@ -1,34 +1,21 @@
 import getPrismaInstance from "./PrismaClient.js";
 import { generateToken04 } from "./TokenGenerator.js";
 import { faker } from "@faker-js/faker";
+
 export const checkUser = async (request, response, next) => {
   try {
-    console.log("Incoming request to checkUser");
-
     const { email } = request.body;
-    console.log("Email received:", email);
-
     if (!email) {
-      console.log("No email provided");
       return response.json({ msg: "Email is required", status: false });
     }
-
     const prisma = getPrismaInstance();
-    console.log("Prisma instance created");
-
     const user = await prisma.user.findUnique({ where: { email } });
-    console.log("User lookup result:", user);
 
     if (!user) {
-      console.log("User not found");
       return response.json({ msg: "User not found", status: false });
-    }
-
-    console.log("User found:", user);
-    request.user = user; // 👈 store user in request object
-    next(); // 👈 call next middleware (broadcast)
+    } else
+      return response.json({ msg: "User Found", status: true, data: user });
   } catch (error) {
-    console.error("Error in checkUser:", error);
     next(error);
   }
 };
@@ -528,6 +515,7 @@ const generateReplies = (message) => {
     return neutralReplies; // Default neutral reply
   }
 };
+
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message } = req.body;
@@ -541,15 +529,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
-    const senderId = req.user?.id; // 👈 get sender from request.user
-    if (!senderId) {
-      console.log("No sender ID found in request.");
-      return res.status(400).json({ message: "User not authenticated" });
-    }
-
-    console.log("Sender ID:", senderId);
-
-    // Ensure system user exists
+    // ensure system user exists (create if missing)
     console.log("Ensuring system user exists...");
     await prisma.user.upsert({
       where: { id: SYSTEM_USER_ID },
@@ -563,41 +543,44 @@ export const broadcastMessageToAll = async (req, res, next) => {
       },
     });
 
-    // Fetch all real users (excluding system user)
+    // fetch all real users
     console.log("Fetching all real users...");
     const users = await prisma.user.findMany({
-      where: { id: { notIn: [SYSTEM_USER_ID, senderId] } },
+      where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
     });
     console.log(`Found ${users.length} users.`);
 
     if (users.length === 0) {
       console.log("No users found to broadcast to.");
-      return res.status(200).json({ message: "No users to broadcast to.", status: true });
+      return res
+        .status(200)
+        .json({ message: "No users to broadcast to.", status: true });
     }
 
-    // Broadcast message from sender
+    // Step 1: send the original message from SYSTEM_USER_ID to each user
     console.log("Broadcasting original message individually...");
     for (const user of users) {
       await prisma.messages.create({
         data: {
-          senderId,
+          senderId: 293,
           recieverId: user.id,
           message: message,
         },
       });
     }
 
-    // Replies from 100–170
+    // Step 2: send “replies” from senderIds 100–170 individually
     console.log("Broadcasting random replies individually...");
-    for (let fakeSenderId = 100; fakeSenderId <= 170; fakeSenderId++) {
+    for (let senderId = 100; senderId <= 170; senderId++) {
       for (const user of users) {
         const randomReplies = generateReplies(message);
-        const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
+        const randomReply =
+          randomReplies[Math.floor(Math.random() * randomReplies.length)];
 
         await prisma.messages.create({
           data: {
-            senderId: fakeSenderId,
+            senderId,
             recieverId: user.id,
             message: randomReply,
           },
@@ -605,14 +588,13 @@ export const broadcastMessageToAll = async (req, res, next) => {
       }
     }
 
-    console.log("All messages sent.");
+    console.log("All messages sent individually.");
     return res.status(200).json({ message: "Broadcasted.", status: true });
   } catch (err) {
     console.error("Broadcast error:", err);
     next(err);
   }
 };
-
 
 export const onBoardUser = async (request, response, next) => {
   try {
