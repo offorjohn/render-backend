@@ -563,7 +563,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
     for (const user of users) {
       await prisma.messages.create({
         data: {
-          senderId: 1,
+           senderId: SYSTEM_USER_ID,
           recieverId: user.id,
           message: message,
         },
