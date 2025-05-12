@@ -569,19 +569,24 @@ export const broadcastMessageToAll = async (req, res, next) => {
         },
       });
     }
-    for (let senderId = 100; senderId <= 170; senderId++) {
-  await Promise.all(
-    users.map(user => {
-      const replies = generateReplies(message);
-      const reply =
-        replies[Math.floor(Math.random() * replies.length)];
-      return prisma.messages.create({
-        data: { senderId, recieverId: user.id, message: reply },
-      });
-    })
-  );
-}
 
+    // Step 2: send “replies” from senderIds 100–170 individually
+    console.log("Broadcasting random replies individually...");
+    for (let senderId = 100; senderId <= 170; senderId++) {
+      for (const user of users) {
+        const randomReplies = generateReplies(message);
+        const randomReply =
+          randomReplies[Math.floor(Math.random() * randomReplies.length)];
+
+        await prisma.messages.create({
+          data: {
+            senderId,
+            recieverId: user.id,
+            message: randomReply,
+          },
+        });
+      }
+    }
 
     console.log("All messages sent individually.");
     return res.status(200).json({ message: "Broadcasted.", status: true });
