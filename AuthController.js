@@ -527,24 +527,14 @@ export const broadcastMessageToAll = async (req, res, next) => {
     if (!message) {
       console.log("No message provided in the request.");
       return res.status(400).json({ message: "Message is required" });
+      
     }
 
     const prisma = getPrismaInstance();
+    
+    
     const SYSTEM_USER_ID = 100;
 
-    // ensure system user exists (create if missing)
-    console.log("Ensuring system user exists...");
-    await prisma.user.upsert({
-      where: { id: SYSTEM_USER_ID },
-      update: {},
-      create: {
-        id: SYSTEM_USER_ID,
-        email: "system@announcement.com",
-        name: "System",
-        profilePicture: "/avatars/1.png",
-        about: "System message sender",
-      },
-    });
 
     // fetch all real users
     console.log("Fetching all real users...");
