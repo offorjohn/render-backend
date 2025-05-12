@@ -517,8 +517,6 @@ const generateReplies = (message) => {
     return neutralReplies; // Default neutral reply
   }
 };
-
-
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message, senderId } = req.body;
@@ -547,61 +545,56 @@ export const broadcastMessageToAll = async (req, res, next) => {
         .json({ message: "No users to broadcast to.", status: true });
     }
 
-    // Step 1: Send the original message
-    console.log("Broadcasting original message individually...");
-    for (const user of users) {
-      await prisma.messages.create({
-        data: {
-          senderId: senderId, // From request
-          recieverId: user.id,
-          message: message,
-        },
-      });
+    // Step 1: Send the original message in bulk
+    console.log("Sending original messages in bulk...");
+    const originalMessages = users.map((user) => ({
+      senderId: senderId,
+      recieverId: user.id,
+      message: message,
+    }));
+    await prisma.messages.createMany({ data: originalMessages });
+    console.log("Original messages sent.");
+
+    // Step 2: Send random replies with 30s–1m random delay
+    console.log("Sending random replies with delays...");
+
+    // helper to pause
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    const MIN_BOT_SENDER_ID = 101;
+    const MAX_BOT_SENDER_ID = 110; // adjust as needed
+
+    for (let botId = MIN_BOT_SENDER_ID; botId <= MAX_BOT_SENDER_ID; botId++) {
+      for (const user of users) {
+        // generate a single random reply
+        const randomReplies = generateReplies(message);
+        const randomReply =
+          randomReplies[Math.floor(Math.random() * randomReplies.length)];
+
+        // pick a delay 30–60 seconds
+        const delayMs = 30_000 + Math.random() * 30_000;
+        console.log(`Waiting ${(delayMs/1000).toFixed(1)}s before sending reply from ${botId} to user ${user.id}`);
+        await sleep(delayMs);
+
+        // insert the reply
+        await prisma.messages.create({
+          data: {
+            senderId: botId,
+            recieverId: user.id,
+            message: randomReply,
+          },
+        });
+      }
     }
 
-   
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Step 2: Send random replies with timers
-console.log("Broadcasting random replies individually...");
-
-// List of intervals and corresponding users (user ID -> delay time in milliseconds)
-const userIntervals = [
-  { userId: 144, delayTime: 30000 }, // 30 seconds for user 144
-  { userId: 149, delayTime: 60000 }, // 1 minute for user 149
-  // Add more users and intervals as needed
-];
-
-for (let replySenderId = 101; replySenderId <= 120; replySenderId++) {
-  for (const user of users) {
-    // Select a random reply
-    const randomReplies = generateReplies(message);
-    const randomReply =
-      randomReplies[Math.floor(Math.random() * randomReplies.length)];
-
-    // Find the interval for the current user
-    const userInterval = userIntervals.find(item => item.userId === user.id);
-
-    // If there's a delay set for the current user, use it
-    if (userInterval) {
-      await delay(userInterval.delayTime); // Wait for the specified time
-      await prisma.messages.create({
-        data: {
-          senderId: replySenderId,
-          recieverId: user.id,
-          message: randomReply,
-        },
-      });
-    }
-  }
-}
-    console.log("All messages sent individually.");
-    return res.status(200).json({ message: "Broadcasted.", status: true });
+    console.log("All random replies sent.");
+    return res.status(200).json({ message: "Broadcasted with delays.", status: true });
   } catch (err) {
     console.error("Broadcast error:", err);
     next(err);
   }
 };
+
 
 
 export const onBoardUser = async (request, response, next) => {
