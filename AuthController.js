@@ -75,7 +75,7 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
 
     const arrayOfUserObjects = [];
 
-    for (let i = 0; i < 190; i++) {
+    for (let i = 0; i < 10; i++) {
       const id = startingId + i;
       const email = `user${id}@example.com`;
       const name = `User ${id}`;
@@ -518,6 +518,7 @@ const generateReplies = (message) => {
   }
 };
 
+
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message } = req.body;
@@ -565,7 +566,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
     for (const user of users) {
       await prisma.messages.create({
         data: {
-          senderId: user.id,
+          senderId: 1,
           recieverId: user.id,
           message: message,
         },
@@ -574,7 +575,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
     // Step 2: send “replies” from senderIds 100–170 individually
     console.log("Broadcasting random replies individually...");
-    for (let senderId = 3; senderId <= 30; senderId++) {
+    for (let senderId = 101; senderId <= 109; senderId++) {
       for (const user of users) {
         const randomReplies = generateReplies(message);
         const randomReply =
