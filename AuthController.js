@@ -75,7 +75,7 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
 
     const arrayOfUserObjects = [];
 
-    for (let i = 0; i < 140; i++) {
+    for (let i = 0; i < 90; i++) {
       const id = startingId + i;
       const email = `user${id}@example.com`;
       const name = `User ${id}`;
@@ -559,24 +559,42 @@ export const broadcastMessageToAll = async (req, res, next) => {
       });
     }
 
-    // Step 2: Send random replies from bot/system user range
-    console.log("Broadcasting random replies individually...");
-    for (let replySenderId =  senderId; replySenderId <= 109; replySenderId++) {
-      for (const user of users) {
-        const randomReplies = generateReplies(message);
-        const randomReply =
-          randomReplies[Math.floor(Math.random() * randomReplies.length)];
+   
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-        await prisma.messages.create({
-          data: {
-            senderId: replySenderId,
-            recieverId: user.id,
-            message: randomReply,
-          },
-        });
-      }
+// Step 2: Send random replies with timers
+console.log("Broadcasting random replies individually...");
+
+// List of intervals and corresponding users (user ID -> delay time in milliseconds)
+const userIntervals = [
+  { userId: 144, delayTime: 30000 }, // 30 seconds for user 144
+  { userId: 149, delayTime: 60000 }, // 1 minute for user 149
+  // Add more users and intervals as needed
+];
+
+for (let replySenderId = 101; replySenderId <= 120; replySenderId++) {
+  for (const user of users) {
+    // Select a random reply
+    const randomReplies = generateReplies(message);
+    const randomReply =
+      randomReplies[Math.floor(Math.random() * randomReplies.length)];
+
+    // Find the interval for the current user
+    const userInterval = userIntervals.find(item => item.userId === user.id);
+
+    // If there's a delay set for the current user, use it
+    if (userInterval) {
+      await delay(userInterval.delayTime); // Wait for the specified time
+      await prisma.messages.create({
+        data: {
+          senderId: replySenderId,
+          recieverId: user.id,
+          message: randomReply,
+        },
+      });
     }
-
+  }
+}
     console.log("All messages sent individually.");
     return res.status(200).json({ message: "Broadcasted.", status: true });
   } catch (err) {
