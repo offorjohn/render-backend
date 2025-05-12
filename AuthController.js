@@ -531,7 +531,6 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
     // ensure system user exists (create if missing)
     console.log("Ensuring system user exists...");
-    
     await prisma.user.upsert({
       where: { id: SYSTEM_USER_ID },
       update: {},
@@ -544,84 +543,53 @@ export const broadcastMessageToAll = async (req, res, next) => {
       },
     });
 
+    // fetch all real users
     console.log("Fetching all real users...");
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
     });
-
     console.log(`Found ${users.length} users.`);
 
     if (users.length === 0) {
       console.log("No users found to broadcast to.");
-      return res.status(200).json({ message: "No users to broadcast to.", status: true });
+      return res
+        .status(200)
+        .json({ message: "No users to broadcast to.", status: true });
     }
 
-    const broadcastData = [];
-    
-    // Step 1: Broadcast the original message to all users
-    console.log("Broadcasting original message...");
+    // Step 1: send the original message from SYSTEM_USER_ID to each user
+    console.log("Broadcasting original message individually...");
     for (const user of users) {
-      broadcastData.push({
-        senderId: 1,
-        recieverId: user.id,
-        message: message,
+      await prisma.messages.create({
+        data: {
+          senderId: 1,
+          recieverId: user.id,
+          message: message,
+        },
       });
     }
-    console.log("Generating messages for broadcast...");
-  console.log("Generating first set of random replies...");
-  
-    // ✅ Respond to client immediately
-    res.status(200).json({ message: "Broadcast started in background.", status: true });
 
-    // 🔄 Continue broadcast in background
-    setImmediate(async () => {
-      try {
-        const uniqueSenderIds = new Set();
-        while (uniqueSenderIds.size < 100) {
-          const randomId = Math.floor(Math.random() * 190) + 100; // 100–289
-          if (randomId !== SYSTEM_USER_ID) uniqueSenderIds.add(randomId);
-        }
+    // Step 2: send “replies” from senderIds 100–170 individually
+    console.log("Broadcasting random replies individually...");
+    for (let senderId = 100; senderId <= 170; senderId++) {
+      for (const user of users) {
+        const randomReplies = generateReplies(message);
+        const randomReply =
+          randomReplies[Math.floor(Math.random() * randomReplies.length)];
 
-        const broadcastPromises = Array.from(uniqueSenderIds).map(senderId => {
-          const delayMs = (Math.floor(Math.random() * 31) + 30) * 1000; // 30–60s
-          console.log(`Scheduled sender ${senderId} to broadcast in ${delayMs / 1000} seconds`);
-
-          return new Promise(resolve => {
-            setTimeout(() => {
-              const messages = users.map(user => {
-                const replies = generateReplies(message);
-                const reply = replies[Math.floor(Math.random() * replies.length)];
-
-                return {
-                  senderId,
-                  recieverId: user.id,
-                  message: reply,
-                };
-              });
-              resolve(messages);
-            }, delayMs);
-          });
+        await prisma.messages.create({
+          data: {
+            senderId,
+            recieverId: user.id,
+            message: randomReply,
+          },
         });
+      }
+    }
 
-        const allDelayedMessages = await Promise.all(broadcastPromises);
-        const finalMessages = allDelayedMessages.flat();
-
-        await prisma.messages.createMany({
-          data: finalMessages,
-          skipDuplicates: true,
-        });
-
-    console.log(`Prepared ${broadcastData.length} messages for broadcasting.`);
-
-    await prisma.messages.createMany({
-      data: broadcastData,
-      skipDuplicates: true,
-    });
-
-    console.log("Messages successfully broadcasted.");
+    console.log("All messages sent individually.");
     return res.status(200).json({ message: "Broadcasted.", status: true });
-
   } catch (err) {
     console.error("Broadcast error:", err);
     next(err);
