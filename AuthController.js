@@ -521,22 +521,18 @@ const generateReplies = (message) => {
 
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
-    const { message } = req.body;
+    const { message, senderId } = req.body;
     console.log("Received message:", message);
 
-    if (!message) {
-      console.log("No message provided in the request.");
-      return res.status(400).json({ message: "Message is required" });
-      
+    if (!message || !senderId) {
+      console.log("Message or senderId missing.");
+      return res.status(400).json({ message: "Both message and senderId are required." });
     }
 
     const prisma = getPrismaInstance();
-    
-    
     const SYSTEM_USER_ID = 100;
 
-
-    // fetch all real users
+    // Fetch all real users (exclude system user)
     console.log("Fetching all real users...");
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
@@ -551,23 +547,21 @@ export const broadcastMessageToAll = async (req, res, next) => {
         .json({ message: "No users to broadcast to.", status: true });
     }
 
-    // Step 1: send the original message from SYSTEM_USER_ID to each user
+    // Step 1: Send the original message
     console.log("Broadcasting original message individually...");
     for (const user of users) {
-      
-      
-     const { message, senderId } = req.body;
+      await prisma.messages.create({
+        data: {
+          senderId: senderId, // From request
+          recieverId: user.id,
+          message: message,
+        },
+      });
+    }
 
-await prisma.messages.create({
-  data: {
-    senderId: senderId, // <-- from request
-    recieverId: user.id,
-    message: message,
-  },
-});
-    // Step 2: send “replies” from senderIds 100–170 individually
+    // Step 2: Send random replies from bot/system user range
     console.log("Broadcasting random replies individually...");
-    for (let senderId = 101; senderId <= 109; senderId++) {
+    for (let replySenderId = 101; replySenderId <= 109; replySenderId++) {
       for (const user of users) {
         const randomReplies = generateReplies(message);
         const randomReply =
@@ -575,7 +569,7 @@ await prisma.messages.create({
 
         await prisma.messages.create({
           data: {
-            senderId,
+            senderId: replySenderId,
             recieverId: user.id,
             message: randomReply,
           },
@@ -589,7 +583,8 @@ await prisma.messages.create({
     console.error("Broadcast error:", err);
     next(err);
   }
-}; 
+};
+
 
 export const onBoardUser = async (request, response, next) => {
   try {
