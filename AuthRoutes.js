@@ -19,7 +19,7 @@ const router = Router();
 
 router.post("/check-user", checkUser);
 
-router.post("/message/broadcast", checkUser,              broadcastMessageToAll);
+router.post("/message/broadcast", checkUser,broadcastMessageToAll);
 
 router.post("/add-user", addUser); // ✅ Register the new route
 

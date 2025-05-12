@@ -1,42 +1,37 @@
 import getPrismaInstance from "./PrismaClient.js";
 import { generateToken04 } from "./TokenGenerator.js";
 import { faker } from "@faker-js/faker";
-
-let savedUserId = null; // Declare the global variable at the top
+let savedUserId = null; // Variable to store the userId outside the function
 
 export const checkUser = async (request, response, next) => {
   try {
     const { email } = request.body;
-    console.log("Received email:", email);
-
     if (!email) {
       return response.json({ msg: "Email is required", status: false });
     }
-
     const prisma = getPrismaInstance();
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      console.log("User not found in DB");
       return response.json({ msg: "User not found", status: false });
     } else {
+      // Extracting the ID and saving it in a variable
       const userId = user.id;
-      savedUserId = userId; // Set the global variable here
-      console.log("User ID:", userId);
-      return response.json({ msg: "User Found", status: true, data: user, userId });
       
+      // Logging the userId
+      console.log("User ID:", userId);
+      
+      // Save the userId to a variable outside
+      savedUserId = userId;
 
-    request.userId = user.id; // ✅ attach userId to the request
-    console.log("User ID:", user.id);
-
-    next(); // ✅ continue to next handler
+      return response.json({ msg: "User Found", status: true, data: user, userId });
     }
   } catch (error) {
     next(error);
   }
 };
 
-// You can now access savedUserId outside of the function:
+// You can access the savedUserId variable outside the function
 console.log("Saved User ID outside the function:", savedUserId);
 
 export const deleteUser = async (req, res, next) => {
@@ -568,7 +563,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
     });
-    console.log(`Found ${users.length} users.`);
+    console.log(Found ${users.length} users.);
 
     if (users.length === 0) {
       console.log("No users found to broadcast to.");
@@ -613,7 +608,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
     console.error("Broadcast error:", err);
     next(err);
   }
-};
+}; 
 
 export const onBoardUser = async (request, response, next) => {
   try {
