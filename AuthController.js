@@ -95,7 +95,7 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
       skipDuplicates: true, // avoids inserting users with duplicate IDs
     });
 
-    return res.status(201).json({ message:  Contacts created successfully. });
+    return res.status(201).json({ message:  'Contacts created successfully.' });
   } catch (err) {
     next(err);
   }
