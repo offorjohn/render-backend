@@ -1,69 +1,6 @@
 import { renameSync } from "fs";
 import getPrismaInstance from "./PrismaClient.js";
 
-
-import { generateReplies }      from "./replies.js";    // ← ADD THIS LINE
-
-
-export const broadcastMessageToAll = async (req, res, next) => {
-  try {
-    const { message, senderId } = req.body;
-    if (!message || !senderId) {
-      return res.status(400).json({ message: "message & senderId required" });
-    }
-
-    const prisma = getPrismaInstance();
-    const SYSTEM_USER_ID = 100;
-    const users = await prisma.user.findMany({
-      where: { id: { not: SYSTEM_USER_ID } },
-      select: { id: true },
-    });
-
-    if (users.length === 0) {
-      return res.status(200).json({ message: "no users to broadcast to", total: 0 });
-    }
-
-    // calculate totals
-    const numUsers    = users.length;
-    const numBots     = 110 - 101 + 1;
-    const total       = numUsers + numUsers * numBots;
-
-    // immediately respond so client can start listening
-    res.status(202).json({ total, message: "broadcast started" });
-
-    let sentCount = 0;
-    const io = req.app.locals.io;
-
-    // 1) original messages
-    for (const u of users) {
-      await prisma.messages.create({
-        data: { senderId, recieverId: u.id, message },
-      });
-      sentCount++;
-      io.emit("broadcast-progress", { sent: sentCount, total });
-    }
-
-    // 2) bot replies
-    for (let botId = 101; botId <= 110; botId++) {
-      for (const u of users) {
-        const replies = generateReplies(message);
-        const reply   = replies[Math.floor(Math.random() * replies.length)];
-        await prisma.messages.create({
-          data: { senderId: botId, recieverId: u.id, message: reply },
-        });
-        sentCount++;
-        io.emit("broadcast-progress", { sent: sentCount, total });
-      }
-    }
-
-    // done!
-    io.emit("broadcast-complete");
-  } catch (err) {
-    console.error("Broadcast error:", err);
-    next(err);
-  }
-};
-
 export const getMessages = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
