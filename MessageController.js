@@ -2,6 +2,9 @@ import { renameSync } from "fs";
 import getPrismaInstance from "./PrismaClient.js";
 
 
+import { generateReplies }      from "./replies.js";    // ← ADD THIS LINE
+
+
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message, senderId } = req.body;
