@@ -67,37 +67,39 @@ export const addUser = async (req, res, next) => {
     next(err);
   }
 };
-
 export const addTenUsersWithCustomIds = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
     const { startingId = 100 } = req.body;
 
-    const arrayOfUserObjects = [];
+    let newUser = null;
 
     for (let i = 0; i < 90; i++) {
       const id = startingId + i;
       const email = `user${id}@example.com`;
       const name = `User ${id}`;
-      const profilePicture = `/avatars/${
-        Math.floor(Math.random() * 9) + 1
-      }.png`;
+      const profilePicture = `/avatars/${Math.floor(Math.random() * 9) + 1}.png`;
 
-      arrayOfUserObjects.push({
-        id,
-        email,
-        name,
-        profilePicture,
-        about: "Batch user",
-      });
+      // Create each user individually
+      try {
+        newUser = await prisma.user.create({
+          data: {
+            id,
+            email,
+            name,
+            profilePicture,
+            about: "Batch user",
+          },
+        });
+      } catch (err) {
+        // Skip duplicates or log if needed
+        if (err.code !== "P2002") {
+          throw err; // rethrow unexpected errors
+        }
+      }
     }
 
-    const result = await prisma.user.createMany({
-      data: arrayOfUserObjects,
-      skipDuplicates: true, // avoids inserting users with duplicate IDs
-    });
-
-    return res.status(201).json({ message: ` Contacts created successfully.` });
+    return res.status(201).json({ user: newUser });
   } catch (err) {
     next(err);
   }
