@@ -515,8 +515,6 @@ const generateReplies = (message) => {
     return neutralReplies; // Default neutral reply
   }
 };
-
-
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message, senderId } = req.body;
@@ -524,13 +522,15 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
     if (!message || !senderId) {
       console.log("Message or senderId missing.");
-      return res.status(400).json({ message: "Both message and senderId are required." });
+      return res
+        .status(400)
+        .json({ message: "Both message and senderId are required." });
     }
 
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
-    // Fetch all real users (exclude system user)
+    // Fetch all real users
     console.log("Fetching all real users...");
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
@@ -542,24 +542,39 @@ export const broadcastMessageToAll = async (req, res, next) => {
       console.log("No users found to broadcast to.");
       return res
         .status(200)
-        .json({ message: "No users to broadcast to.", status: true });
+        .json({ message: "No users to broadcast to.", total: 0 });
     }
 
-    // Step 1: Send the original message
+    // Calculate total messages (originals + replies)
+    const originalsCount = users.length;
+    const botIds         = Array.from({ length: 10 }, (_, i) => 101 + i);
+    const repliesCount   = users.length * botIds.length;
+    const total          = originalsCount + repliesCount;
+
+    // Immediately let client know “we’ve started” + total
+    res.status(202).json({ message: "Broadcast started", total });
+
+    // Grab your io instance
+    const io = req.app.locals.io;
+    let sentCount = 0;
+
+    // Step 1: send originals
     console.log("Broadcasting original message individually...");
     for (const user of users) {
       await prisma.messages.create({
         data: {
-          senderId: senderId, // From request
+          senderId,
           recieverId: user.id,
-          message: message,
+          message,
         },
       });
+      sentCount++;
+      io.emit("broadcast-progress", { sent: sentCount, total });
     }
 
-    // Step 2: Send random replies from bot/system user range
+    // Step 2: send bot replies
     console.log("Broadcasting random replies individually...");
-    for (let replySenderId = 101; replySenderId <= 110; replySenderId++) {
+    for (const botId of botIds) {
       for (const user of users) {
         const randomReplies = generateReplies(message);
         const randomReply =
@@ -567,22 +582,23 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
         await prisma.messages.create({
           data: {
-            senderId: replySenderId,
+            senderId: botId,
             recieverId: user.id,
             message: randomReply,
           },
         });
+        sentCount++;
+        io.emit("broadcast-progress", { sent: sentCount, total });
       }
     }
 
     console.log("All messages sent individually.");
-    return res.status(200).json({ message: "Broadcasted.", status: true });
+    io.emit("broadcast-complete");
   } catch (err) {
     console.error("Broadcast error:", err);
     next(err);
   }
 };
-
 
 export const onBoardUser = async (request, response, next) => {
   try {
