@@ -66,7 +66,9 @@ export const addUser = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-};export const addTenUsersWithCustomIds = async (req, res, next) => {
+};
+
+export const addTenUsersWithCustomIds = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
     const { startingId = 100 } = req.body;

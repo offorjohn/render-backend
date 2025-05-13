@@ -104,23 +104,15 @@ app.locals.io = io;
 // track online users
 
 global.onlineUsers = new Map();
-
-
 io.on("connection", (socket) => {
   global.chatSocket = socket;
-  console.log(`🔌 New connection: Socket ID = ${socket.id}`);
-
-  socket.on("add-batch-users", (userId) => {
+  socket.on("add-user", (userId) => {
     onlineUsers.set(userId, socket.id);
-    console.log(`✅ User added: ${userId} (Socket ID: ${socket.id})`);
-    console.log("📡 Current online users:", Array.from(onlineUsers.entries()));
-
     socket.broadcast.emit("online-users", {
       onlineUsers: Array.from(onlineUsers.keys()),
     });
   });
 
-  
   socket.on("signout", (id) => {
     onlineUsers.delete(id);
     socket.broadcast.emit("online-users", {
