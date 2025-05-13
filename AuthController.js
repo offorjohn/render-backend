@@ -67,13 +67,12 @@ export const addUser = async (req, res, next) => {
     next(err);
   }
 };
-
 export const addTenUsersWithCustomIds = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
     const { startingId = 100 } = req.body;
 
-    let newUser = null;
+    const arrayOfUserObjects = [];
 
     for (let i = 0; i < 90; i++) {
       const id = startingId + i;
@@ -81,30 +80,26 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
       const name = `User ${id}`;
       const profilePicture = `/avatars/${Math.floor(Math.random() * 9) + 1}.png`;
 
-      // Create each user individually
-      try {
-        newUser = await prisma.user.create({
-          data: {
-            id,
-            email,
-            name,
-            profilePicture,
-            about: "Batch user",
-          },
-        });
-      } catch (err) {
-        // Skip duplicates or log if needed
-        if (err.code !== "P2002") {
-          throw err; // rethrow unexpected errors
-        }
-      }
+
+      arrayOfUserObjects.push({
+        id,
+        email,
+        name,
+        profilePicture,
+        about: "Batch user",
+      });
     }
 
-    return res.status(201).json({ user: newUser });
+    const result = await prisma.user.createMany({
+      data: arrayOfUserObjects,
+      skipDuplicates: true, // avoids inserting users with duplicate IDs
+    });
+
+    return res.status(201).json({ message:  Contacts created successfully. });
   } catch (err) {
     next(err);
   }
-};
+}; 
 
 export const deleteBatchUsers = async (req, res, next) => {
   try {
@@ -564,7 +559,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
     // Step 2: Send random replies from bot/system user range
     console.log("Broadcasting random replies individually...");
-    for (let replySenderId = 2104; replySenderId <= 2106; replySenderId++) {
+    for (let replySenderId = 101; replySenderId <= 110; replySenderId++) {
       for (const user of users) {
         const randomReplies = generateReplies(message);
         const randomReply =
