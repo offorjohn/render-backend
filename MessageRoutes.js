@@ -6,17 +6,12 @@ import {
   getInitialContactsWithMessages,
   getMessages,
 } from "./MessageController.js";
-
-import { broadcastMessageToAll } from "./MessageController.js";
 import multer from "multer";
 
 const upload = multer({ dest: "uploads/recordings/" });
 const uploadImage = multer({ dest: "uploads/images/" });
 
 const router = Router();
-
-
-router.post("/broadcast", broadcastMessageToAll);
 
 router.post("/add-message", addMessage);
 router.get("/get-messages/:from/:to", getMessages);
