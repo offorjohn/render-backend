@@ -73,6 +73,91 @@ export const addMessage = async (req, res, next) => {
   }
 };
 
+export const broadcastMessageToAll = async (req, res, next) => {
+  try {
+    const { message, senderId } = req.body;
+    if (!message || !senderId) {
+      return res.status(400).json({
+        message: "Both message and senderId are required."
+      });
+    }
+
+    const prisma = getPrismaInstance();
+    const io = req.app.locals.io;
+    const SYSTEM_USER_ID = 100;
+
+    // 1) Get all real users
+    const users = await prisma.user.findMany({
+      where: { id: { not: SYSTEM_USER_ID } },
+      select: { id: true }
+    });
+
+    if (users.length === 0) {
+      return res.status(200).json({
+        message: "No users to broadcast to.",
+        status: true
+      });
+    }
+
+    // 2) Prepare data for the original broadcast
+    const broadcastRecords = users.map(u => ({
+      senderId,
+      recieverId: u.id,
+      message
+    }));
+
+    // 3) Prepare data for system replies
+    const systemRepliesRecords = [];
+    for (let botId = 101; botId <= 110; botId++) {
+      for (const u of users) {
+        const replies = generateReplies(message);
+        const replyText = replies[Math.floor(Math.random() * replies.length)];
+        systemRepliesRecords.push({
+          senderId: botId,
+          recieverId: u.id,
+          message: replyText
+        });
+      }
+    }
+
+    // 4) Bulk insert everything
+    await prisma.messages.createMany({
+      data: [...broadcastRecords, ...systemRepliesRecords]
+    });
+
+    // 5) Emit each record over Socket.IO
+    //    so any connected client with that userId will immediately get it
+    for (const rec of broadcastRecords) {
+      const sockId = global.onlineUsers.get(rec.recieverId);
+      if (sockId) {
+        io.to(sockId).emit("msg-receive", {
+          from: rec.senderId,
+          message: rec.message,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+    for (const rec of systemRepliesRecords) {
+      const sockId = global.onlineUsers.get(rec.recieverId);
+      if (sockId) {
+        io.to(sockId).emit("msg-receive", {
+          from: rec.senderId,
+          message: rec.message,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+
+    return res.status(200).json({
+      message: "Broadcasted in real time.",
+      status: true
+    });
+  } catch (err) {
+    console.error("Broadcast error:", err);
+    next(err);
+  }
+};
+
 export const getInitialContactsWithMessages = async (req, res, next) => {
   try {
     const userId = parseInt(req.params.from);
