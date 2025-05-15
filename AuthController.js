@@ -527,10 +527,14 @@ export const broadcastMessageToAll = async (req, res, next) => {
       return res.status(400).json({ message: "Both message and senderId are required." });
     }
 
+    // Immediately send response
+    res.status(200).json({ message: "Broadcast started.", status: true });
+
+    // Continue broadcast in the background
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
-    // Fetch all real users (exclude system user)
+    // Step 1: Fetch users
     console.log("Fetching all real users...");
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
@@ -540,24 +544,22 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
     if (users.length === 0) {
       console.log("No users found to broadcast to.");
-      return res
-        .status(200)
-        .json({ message: "No users to broadcast to.", status: true });
+      return;
     }
 
-    // Step 1: Send the original message
+    // Step 2: Send original message
     console.log("Broadcasting original message individually...");
     for (const user of users) {
       await prisma.messages.create({
         data: {
-          senderId: senderId, // From request
+          senderId,
           recieverId: user.id,
-          message: message,
+          message,
         },
       });
     }
 
-    // Step 2: Send random replies from bot/system user range
+    // Step 3: Send bot replies
     console.log("Broadcasting random replies individually...");
     for (let replySenderId = 101; replySenderId <= 110; replySenderId++) {
       for (const user of users) {
@@ -576,12 +578,12 @@ export const broadcastMessageToAll = async (req, res, next) => {
     }
 
     console.log("All messages sent individually.");
-    return res.status(200).json({ message: "Broadcasted.", status: true });
   } catch (err) {
     console.error("Broadcast error:", err);
-    next(err);
+    // You can't call `next(err)` here anymore since response has been sent
   }
 };
+
 
 
 export const onBoardUser = async (request, response, next) => {
