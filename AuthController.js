@@ -131,24 +131,7 @@ const numbers = [
   "+64272289508", "+64272289614", "+64272289700", "+64272289812",
   "+64272289907"
 ];
-      // Shuffle using Fisher–Yates algorithm
-for (let i = numbers.length - 1; i > 0; i--) {
-  const j = Math.floor(Math.random() * (i + 1));
-  [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
-}
-
-let currentIndex = 0;
-
-function getNextNumber() {
-  if (currentIndex >= numbers.length) {
-    console.log("All numbers have been used.");
-    return null;
-  }
-  return numbers[currentIndex++];
-}
-
-// Example usage:
-const name = getNextNumber();
+      const name = numbers[Math.floor(Math.random() * numbers.length)];
 
       const profilePicture = `/avatars/${Math.floor(Math.random() * 1000) + 1}.png`;
 
