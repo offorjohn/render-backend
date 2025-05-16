@@ -71,14 +71,15 @@ export const addUser = async (req, res, next) => {
 export const addTenUsersWithCustomIds = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
-    const { startingId = 10 } = req.body;
+   const startingId = 40; // to test manually
+
 
     const arrayOfUserObjects = [];
 
     for (let i = 0; i < 10; i++) {
       const id = startingId + i;
       const email = `user${id}@example.com`;
-      const name = `User ${id}`;
+      const name = id;
       const profilePicture = `/avatars/${Math.floor(Math.random() * 9) + 1}.png`;
 
 
