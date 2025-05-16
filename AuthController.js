@@ -76,7 +76,7 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
 
     const arrayOfUserObjects = [];
 
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 1500; i++) {
       const id = startingId + i;
       const email = `user${id}@example.com`;
 const numbers = [
@@ -131,13 +131,24 @@ const numbers = [
   "+64272289508", "+64272289614", "+64272289700", "+64272289812",
   "+64272289907"
 ];
+function getRandomNumber() {
+  if (numbers.length === 0) {
+    console.log("All numbers have been used.");
+    return null;
+  }
 
+  const index = Math.floor(Math.random() * numbers.length);
+  const selected = numbers[index];
+  numbers.splice(index, 1); // Remove the number so it's not reused
+  return selected;
+}
 
-const name = numbers[Math.floor(Math.random() * numbers.length)];
+// Example usage:
+const name = getRandomNumber();
 
 console.log(name);
 
-      const profilePicture = `/avatars/${Math.floor(Math.random() * 1500) + 1}.png`;
+      const profilePicture = `/avatars/${Math.floor(Math.random() * 1000) + 1}.png`;
 
 
       arrayOfUserObjects.push({
