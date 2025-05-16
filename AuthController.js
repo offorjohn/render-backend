@@ -67,20 +67,29 @@ export const addUser = async (req, res, next) => {
     next(err);
   }
 };
-
 export const addTenUsersWithCustomIds = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
-    const { startingId = 100 } = req.body;
+    // Accept an array of custom IDs (e.g., phone numbers) in the request body
+    const { numbers = [], startingId = null } = req.body;
 
     const arrayOfUserObjects = [];
 
+    // Determine how to supply IDs: use provided numbers or fallback to sequential IDs
     for (let i = 0; i < 10; i++) {
-      const id = startingId + i;
+      // Choose ID: from numbers array if available, otherwise sequential from startingId
+      const id = numbers.length > i
+        ? Number(numbers[i])  // parse phone number strings if needed
+        : (startingId !== null ? startingId + i : undefined);
+
+      if (id === undefined) {
+        throw new Error('Either provide a `numbers` array or a `startingId`.');
+      }
+
       const email = `user${id}@example.com`;
       const name = `User ${id}`;
-      const profilePicture = `/avatars/${Math.floor(Math.random() * 9) + 1}.png`;
-
+      // Use the ID (number) to select the avatar image
+      const profilePicture = `/avatars/${id}.png`;
 
       arrayOfUserObjects.push({
         id,
@@ -96,11 +105,12 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
       skipDuplicates: true, // avoids inserting users with duplicate IDs
     });
 
-    return res.status(201).json({ message:  'Contacts created successfully.' });
+    return res.status(201).json({ message: 'Contacts created successfully.' });
   } catch (err) {
     next(err);
   }
-}; 
+};
+
 
 export const deleteBatchUsers = async (req, res, next) => {
   try {
