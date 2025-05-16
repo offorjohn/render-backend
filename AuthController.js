@@ -79,9 +79,16 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
     for (let i = 0; i < 10; i++) {
       const id = startingId + i;
       const email = `user${id}@example.com`;
-      const name =  `$
-+64272270102
-`;
+      const numbers = [
+  "+64272270102", "+64272270305", "+64272270559", "+64272270821",
+  "+64272270917", "+64272271017", "+64272271107", "+64272271261",
+  "+64272271478", "+64272271550", // ... (continue with all the other numbers)
+];
+
+const name = numbers[Math.floor(Math.random() * numbers.length)];
+
+console.log(name);
+
       const profilePicture = `/avatars/${Math.floor(Math.random() * 1500) + 1}.png`;
 
 
