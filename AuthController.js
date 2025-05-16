@@ -631,7 +631,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
     // Step 3: Send bot replies
     console.log("Broadcasting random replies individually...");
-    for (let replySenderId = 101; replySenderId <= 150; replySenderId++) {
+    for (let replySenderId = 101; replySenderId <= 850; replySenderId++) {
       for (const user of users) {
         const randomReplies = generateReplies(message);
         const randomReply =
