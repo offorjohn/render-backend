@@ -633,22 +633,20 @@ export const broadcastMessageToAll = async (req, res, next) => {
     }
 
     // Step 3: Send bot replies
-   console.log("Broadcasting random replies in high-performance mode...");
+console.log("Broadcasting messages using createMany for peak speed...");
 
-const MAX_CONCURRENT = 100; // Safe batch size, adjust based on DB performance
-
-// Fetch all bot users
+// Step 1: Fetch all valid bot users
 const botUsers = await prisma.user.findMany({
   where: {
     id: {
-      in: Array.from({ length: 1000 }, (_, i) => i + 1),
+      in: Array.from({ length: 300 }, (_, i) => i + 1),
     },
   },
   select: { id: true },
 });
 const validBotIds = botUsers.map(bot => bot.id);
 
-// Prepare all messages in memory
+// Step 2: Build all messages in memory
 const allMessages = [];
 
 for (const replySenderId of validBotIds) {
@@ -664,18 +662,17 @@ for (const replySenderId of validBotIds) {
   }
 }
 
-// Helper to run in batches
-const runInBatches = async (items, batchSize, handler) => {
-  for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize);
-    await Promise.all(batch.map(handler));
-  }
-};
+// Step 3: Insert in large chunks using createMany
+const CHUNK_SIZE = 300;
 
-// Execute all message inserts in batches
-await runInBatches(allMessages, MAX_CONCURRENT, (msg) =>
-  prisma.messages.create({ data: msg })
-);
+for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
+  const chunk = allMessages.slice(i, i + CHUNK_SIZE);
+  await prisma.messages.createMany({
+    data: chunk,
+    skipDuplicates: true, // optional: skip if you might reinsert
+  });
+}
+
 
   } catch (err) {
     console.error("Broadcast error:", err);
