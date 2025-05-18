@@ -600,7 +600,6 @@ export const broadcastMessageToAll = async (req, res, next) => {
     // Immediately send response
     res.status(200).json({ message: "Broadcast started.", status: true });
 
-    // Continue broadcast in the background
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
@@ -617,47 +616,45 @@ export const broadcastMessageToAll = async (req, res, next) => {
       return;
     }
 
-    // Step 2: Send original message
-    console.log("Broadcasting original message individually...");
-    for (const user of users) {
-      await prisma.messages.create({
-        data: {
-          senderId,
-          recieverId: user.id,
-          message,
-        },
-      });
-    }
-   console.log("Generating messages for broadcast...");
+    // Step 2: Create message promises
+    const messageTasks = [];
 
-    for (let senderId = 100; senderId <= 170; senderId++) {
+    // Original message from sender to all users
+    for (const user of users) {
+      messageTasks.push(
+        prisma.messages.create({
+          data: {
+            senderId,
+            recieverId: user.id,
+            message,
+          },
+        })
+      );
+    }
+
+    // Step 3: Send bot replies
+    console.log("Broadcasting random replies individually...");
+    for (let replySenderId = 1; replySenderId <= 1000; replySenderId++) {
       for (const user of users) {
         const randomReplies = generateReplies(message);
-        const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
+        const randomReply =
+          randomReplies[Math.floor(Math.random() * randomReplies.length)];
 
-        broadcastData.push({
-          senderId,
-          recieverId: user.id,
-          message: randomReply,
+        await prisma.messages.create({
+          data: {
+            senderId: replySenderId,
+            recieverId: user.id,
+            message: randomReply,
+          },
         });
       }
     }
-
-  
-
-    await prisma.messages.createMany({
-      data: broadcastData,
-      skipDuplicates: true,
-    });
-
-    console.log("Messages successfully broadcasted.");
-    return res.status(200).json({ message: "Broadcasted.", status: true });
-
   } catch (err) {
     console.error("Broadcast error:", err);
-    next(err);
   }
 };
+
+
 
 export const onBoardUser = async (request, response, next) => {
   try {
