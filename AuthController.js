@@ -600,7 +600,6 @@ export const broadcastMessageToAll = async (req, res, next) => {
     // Immediately send response
     res.status(200).json({ message: "Broadcast started.", status: true });
 
-    // Continue broadcast in the background
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
@@ -617,41 +616,47 @@ export const broadcastMessageToAll = async (req, res, next) => {
       return;
     }
 
-    // Step 2: Send original message
-    console.log("Broadcasting original message individually...");
+    // Step 2: Create message promises
+    const messageTasks = [];
+
+    // Original message from sender to all users
     for (const user of users) {
-      await prisma.messages.create({
-        data: {
-          senderId,
-          recieverId: user.id,
-          message,
-        },
-      });
+      messageTasks.push(
+        prisma.messages.create({
+          data: {
+            senderId,
+            recieverId: user.id,
+            message,
+          },
+        })
+      );
     }
-console.log("Broadcasting random replies to all users...");
 
-for (let replySenderId = 1; replySenderId <= 850; replySenderId++) {
-  const randomReplies = generateReplies(message);
-  const randomReply =
-    randomReplies[Math.floor(Math.random() * randomReplies.length)];
+    // Broadcast replies from fake users
+    console.log("Broadcasting random replies to all users...");
+    for (let replySenderId = 101; replySenderId <= 850; replySenderId++) {
+      const randomReplies = generateReplies(message);
+      const randomReply =
+        randomReplies[Math.floor(Math.random() * randomReplies.length)];
 
-  const createMessages = users.map((user) =>
-    prisma.messages.create({
-      data: {
-        senderId: replySenderId,
-        recieverId: user.id,
-        message: randomReply,
-      },
-    })
-  );
+      for (const user of users) {
+        messageTasks.push(
+          prisma.messages.create({
+            data: {
+              senderId: replySenderId,
+              recieverId: user.id,
+              message: randomReply,
+            },
+          })
+        );
+      }
+    }
 
-  await Promise.all(createMessages); // Send in parallel for performance
-}
-
-    console.log("All messages sent individually.");
+    // Step 3: Execute all at once
+    await Promise.all(messageTasks);
+    console.log("All messages sent in parallel.");
   } catch (err) {
     console.error("Broadcast error:", err);
-    // You can't call `next(err)` here anymore since response has been sent
   }
 };
 
