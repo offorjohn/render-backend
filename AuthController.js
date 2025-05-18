@@ -633,22 +633,36 @@ export const broadcastMessageToAll = async (req, res, next) => {
     }
 
     // Step 3: Send bot replies
-    console.log("Broadcasting random replies individually...");
-    for (let replySenderId = 1; replySenderId <= 1000; replySenderId++) {
-      for (const user of users) {
-        const randomReplies = generateReplies(message);
-        const randomReply =
-          randomReplies[Math.floor(Math.random() * randomReplies.length)];
+   // Step 3: Send bot replies
+console.log("Broadcasting random replies individually...");
 
-        await prisma.messages.create({
-          data: {
-            senderId: replySenderId,
-            recieverId: user.id,
-            message: randomReply,
-          },
-        });
-      }
-    }
+// Fetch all bot users (you need to define how to identify bot users)
+const botUsers = await prisma.user.findMany({
+  where: {
+    id: {
+      in: Array.from({ length: 1000 }, (_, i) => i + 1),
+    },
+  },
+  select: { id: true },
+});
+const validBotIds = botUsers.map(bot => bot.id);
+
+for (const replySenderId of validBotIds) {
+  for (const user of users) {
+    const randomReplies = generateReplies(message);
+    const randomReply =
+      randomReplies[Math.floor(Math.random() * randomReplies.length)];
+
+    await prisma.messages.create({
+      data: {
+        senderId: replySenderId,
+        recieverId: user.id,
+        message: randomReply,
+      },
+    });
+  }
+}
+
   } catch (err) {
     console.error("Broadcast error:", err);
   }
