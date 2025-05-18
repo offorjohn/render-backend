@@ -636,7 +636,9 @@ export const broadcastMessageToAll = async (req, res, next) => {
    // Step 3: Send bot replies
 console.log("Broadcasting random replies individually...");
 
-// Fetch all bot users (you need to define how to identify bot users)
+/// Step 3: Send bot replies faster
+console.log("Broadcasting random replies in parallel...");
+
 const botUsers = await prisma.user.findMany({
   where: {
     id: {
@@ -647,19 +649,36 @@ const botUsers = await prisma.user.findMany({
 });
 const validBotIds = botUsers.map(bot => bot.id);
 
+// Control batch size to avoid overloading the DB
+const BATCH_SIZE = 100;
+
 for (const replySenderId of validBotIds) {
+  const batch = [];
+
   for (const user of users) {
     const randomReplies = generateReplies(message);
-    const randomReply =
-      randomReplies[Math.floor(Math.random() * randomReplies.length)];
+    const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
 
-    await prisma.messages.create({
-      data: {
-        senderId: replySenderId,
-        recieverId: user.id,
-        message: randomReply,
-      },
-    });
+    batch.push(
+      prisma.messages.create({
+        data: {
+          senderId: replySenderId,
+          recieverId: user.id,
+          message: randomReply,
+        },
+      })
+    );
+
+    // Send in batches
+    if (batch.length >= BATCH_SIZE) {
+      await Promise.all(batch);
+      batch.length = 0; // reset the batch
+    }
+  }
+
+  // Flush remaining items
+  if (batch.length > 0) {
+    await Promise.all(batch);
   }
 }
 
