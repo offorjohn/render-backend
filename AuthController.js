@@ -628,24 +628,25 @@ export const broadcastMessageToAll = async (req, res, next) => {
         },
       });
     }
+console.log("Broadcasting random replies to all users...");
 
-    // Step 3: Send bot replies
-    console.log("Broadcasting random replies individually...");
-    for (let replySenderId = 101; replySenderId <= 850; replySenderId++) {
-      for (const user of users) {
-        const randomReplies = generateReplies(message);
-        const randomReply =
-          randomReplies[Math.floor(Math.random() * randomReplies.length)];
+for (let replySenderId = 101; replySenderId <= 850; replySenderId++) {
+  const randomReplies = generateReplies(message);
+  const randomReply =
+    randomReplies[Math.floor(Math.random() * randomReplies.length)];
 
-        await prisma.messages.create({
-          data: {
-            senderId: replySenderId,
-            recieverId: user.id,
-            message: randomReply,
-          },
-        });
-      }
-    }
+  const createMessages = users.map((user) =>
+    prisma.messages.create({
+      data: {
+        senderId: replySenderId,
+        recieverId: user.id,
+        message: randomReply,
+      },
+    })
+  );
+
+  await Promise.all(createMessages); // Send in parallel for performance
+}
 
     console.log("All messages sent individually.");
   } catch (err) {
