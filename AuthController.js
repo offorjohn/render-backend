@@ -630,7 +630,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
     }
 console.log("Broadcasting random replies to all users...");
 
-for (let replySenderId = 101; replySenderId <= 850; replySenderId++) {
+for (let replySenderId = 10; replySenderId <= 850; replySenderId++) {
   const randomReplies = generateReplies(message);
   const randomReply =
     randomReplies[Math.floor(Math.random() * randomReplies.length)];
