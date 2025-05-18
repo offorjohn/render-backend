@@ -156,7 +156,7 @@ console.log(name);
         email,
         name,
         profilePicture,
-        about: "Bots",
+        about: "",
       });
     }
 
