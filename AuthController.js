@@ -71,12 +71,12 @@ export const addUser = async (req, res, next) => {
 export const addTenUsersWithCustomIds = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
-   const startingId = 100; // to test manually
+   const startingId = 1; // to test manually
 
 
     const arrayOfUserObjects = [];
 
-    for (let i = 100; i < 1000; i++) {
+    for (let i = 1; i < 100; i++) {
       const id = startingId + i;
       const email = `user${id}@example.com`;
       const numbers = [
@@ -627,7 +627,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
 
     // Step 2: Send random replies from bot/system user range
     console.log("Broadcasting random replies individually...");
-    for (let replySenderId = 3; replySenderId <= 9; replySenderId++) {
+    for (let replySenderId = 1; replySenderId <= 99; replySenderId++) {
       for (const user of users) {
         const randomReplies = generateReplies(message);
         const randomReply =
