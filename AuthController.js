@@ -76,7 +76,7 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
 
     const arrayOfUserObjects = [];
 
-    for (let i = 1; i < 500; i++) {
+    for (let i = 1; i < 1000; i++) {
       const id = startingId + i;
       const email = `user${id}@example.com`;
       const numbers = [
@@ -644,7 +644,7 @@ for (let replySenderId = 3; replySenderId <= 20; replySenderId++) {
 }
 
 // 2) Chunk it so you don’t blow up your DB in a single giant call
-const CHUNK_SIZE = 5;
+const CHUNK_SIZE = 11;
 for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
   const chunk = allMessages.slice(i, i + CHUNK_SIZE);
   // you can pass skipDuplicates: true if you want to ignore unique‐constraint errors
