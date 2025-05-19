@@ -626,25 +626,52 @@ export const broadcastMessageToAll = async (req, res, next) => {
       });
     }
 
-    // Step 2: Send random replies from bot/system user range
-    console.log("Broadcasting random replies individually...");
-    for (let replySenderId = 101; replySenderId <= 1000; replySenderId++) {
-      for (const user of users) {
-        const randomReplies = generateReplies(message);
-        const randomReply =
-          randomReplies[Math.floor(Math.random() * randomReplies.length)];
+   // Step 3: Send bot replies faster
+console.log("Broadcasting random replies in parallel...");
 
-        await prisma.messages.create({
-          data: {
-            senderId: replySenderId,
-            recieverId: user.id,
-            message: randomReply,
-          },
-        });
-      }
+const botUsers = await prisma.user.findMany({
+  where: {
+    id: {
+      in: Array.from({ length: 1000 }, (_, i) => i + 1),
+    },
+  },
+  select: { id: true },
+});
+const validBotIds = botUsers.map(bot => bot.id);
+
+// Control batch size to avoid overloading the DB
+const BATCH_SIZE = 100;
+
+for (const replySenderId of validBotIds) {
+  const batch = [];
+
+  for (const user of users) {
+    const randomReplies = generateReplies(message);
+    const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
+
+    batch.push(
+      prisma.messages.create({
+        data: {
+          senderId: replySenderId,
+          recieverId: user.id,
+          message: randomReply,
+        },
+      })
+    );
+
+    // Send in batches
+    if (batch.length >= BATCH_SIZE) {
+      await Promise.all(batch);
+      batch.length = 0; // reset the batch
     }
+  }
 
-    console.log("All messages sent individually.");
+  // Flush remaining items
+  if (batch.length > 0) {
+    await Promise.all(batch);
+  }
+}
+
     return res.status(200).json({ message: "Broadcasted.", status: true });
   } catch (err) {
     console.error("Broadcast error:", err);
