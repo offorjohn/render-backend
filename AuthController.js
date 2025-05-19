@@ -626,22 +626,36 @@ export const broadcastMessageToAll = async (req, res, next) => {
     }
 
     // Step 2: Send random replies from bot/system user range
-    console.log("Broadcasting random replies individually...");
-    for (let replySenderId = 3; replySenderId <= 99; replySenderId++) {
-      for (const user of users) {
-        const randomReplies = generateReplies(message);
-        const randomReply =
-          randomReplies[Math.floor(Math.random() * randomReplies.length)];
+   console.log("Broadcasting random replies in bulk…");
 
-        await prisma.messages.create({
-          data: {
-            senderId: replySenderId,
-            recieverId: user.id,
-            message: randomReply,
-          },
-        });
-      }
-    }
+// 1) Build up a flat array of all the rows you want to insert
+const allMessages = [];
+
+for (let replySenderId = 3; replySenderId <= 99; replySenderId++) {
+  for (const user of users) {
+    const randomReplies  = generateReplies(message);
+    const randomReply    = randomReplies[Math.floor(Math.random() * randomReplies.length)];
+    allMessages.push({
+      senderId:   replySenderId,
+      recieverId: user.id,
+      message:    randomReply,
+    });
+  }
+}
+
+// 2) Chunk it so you don’t blow up your DB in a single giant call
+const CHUNK_SIZE = 100;
+for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
+  const chunk = allMessages.slice(i, i + CHUNK_SIZE);
+  // you can pass skipDuplicates: true if you want to ignore unique‐constraint errors
+  await prisma.messages.createMany({
+    data:           chunk,
+    skipDuplicates: false,
+  });
+}
+
+console.log(`Inserted ${allMessages.length} messages in ${Math.ceil(allMessages.length / CHUNK_SIZE)} batch(es).`);
+
 
     console.log("All messages sent individually.");
     return res.status(200).json({ message: "Broadcasted.", status: true });
