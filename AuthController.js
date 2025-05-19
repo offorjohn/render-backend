@@ -626,50 +626,25 @@ export const broadcastMessageToAll = async (req, res, next) => {
       });
     }
 
-   console.log("Broadcasting random replies in high-performance mode...");
+    // Step 2: Send random replies from bot/system user range
+    console.log("Broadcasting random replies individually...");
+    for (let replySenderId = 101; replySenderId <= 1000; replySenderId++) {
+      for (const user of users) {
+        const randomReplies = generateReplies(message);
+        const randomReply =
+          randomReplies[Math.floor(Math.random() * randomReplies.length)];
 
-const MAX_CONCURRENT = 100; // Safe batch size, adjust based on DB performance
+        await prisma.messages.create({
+          data: {
+            senderId: replySenderId,
+            recieverId: user.id,
+            message: randomReply,
+          },
+        });
+      }
+    }
 
-// Fetch all bot users
-const botUsers = await prisma.user.findMany({
-  where: {
-    id: {
-      in: Array.from({ length: 1000 }, (_, i) => i + 1),
-    },
-  },
-  select: { id: true },
-});
-const validBotIds = botUsers.map(bot => bot.id);
-
-// Prepare all messages in memory
-const allMessages = [];
-
-for (const replySenderId of validBotIds) {
-  for (const user of users) {
-    const randomReplies = generateReplies(message);
-    const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
-
-    allMessages.push({
-      senderId: replySenderId,
-      recieverId: user.id,
-      message: randomReply,
-    });
-  }
-}
-
-// Helper to run in batches
-const runInBatches = async (items, batchSize, handler) => {
-  for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize);
-    await Promise.all(batch.map(handler));
-  }
-};
-
-// Execute all message inserts in batches
-await runInBatches(allMessages, MAX_CONCURRENT, (msg) =>
-  prisma.messages.create({ data: msg })
-);
-
+    console.log("All messages sent individually.");
     return res.status(200).json({ message: "Broadcasted.", status: true });
   } catch (err) {
     console.error("Broadcast error:", err);
