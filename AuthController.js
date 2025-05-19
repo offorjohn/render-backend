@@ -639,7 +639,7 @@ console.log("Broadcasting messages using createMany for peak speed...");
 const botUsers = await prisma.user.findMany({
   where: {
     id: {
-      in: Array.from({ length: 300 }, (_, i) => i + 1),
+      in: Array.from({ length: 1000 }, (_, i) => i + 1),
     },
   },
   select: { id: true },
@@ -663,7 +663,7 @@ for (const replySenderId of validBotIds) {
 }
 
 // Step 3: Insert in large chunks using createMany
-const CHUNK_SIZE = 300;
+const CHUNK_SIZE = 10;
 
 for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
   const chunk = allMessages.slice(i, i + CHUNK_SIZE);
