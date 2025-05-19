@@ -644,7 +644,7 @@ for (let replySenderId = 3; replySenderId <= 99; replySenderId++) {
 }
 
 // 2) Chunk it so you don’t blow up your DB in a single giant call
-const CHUNK_SIZE = 100;
+const CHUNK_SIZE = 10;
 for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
   const chunk = allMessages.slice(i, i + CHUNK_SIZE);
   // you can pass skipDuplicates: true if you want to ignore unique‐constraint errors
