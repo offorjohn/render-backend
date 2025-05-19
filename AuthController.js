@@ -597,45 +597,38 @@ export const broadcastMessageToAll = async (req, res, next) => {
       return res.status(400).json({ message: "Both message and senderId are required." });
     }
 
-    // Immediately send response
-    res.status(200).json({ message: "Broadcast started.", status: true });
-
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
-    // Step 1: Fetch users
+    // Fetch all real users (exclude system user)
     console.log("Fetching all real users...");
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
     });
-    console.log(`Found ${users.length} users.`);
 
     if (users.length === 0) {
       console.log("No users found to broadcast to.");
-      return;
+      return res
+        .status(200)
+        .json({ message: "No users to broadcast to.", status: true });
     }
 
-    // Step 2: Create message promises
-    const messageTasks = [];
-
-    // Original message from sender to all users
+    // Step 1: Send the original message
+    console.log("Broadcasting original message individually...");
     for (const user of users) {
-      messageTasks.push(
-        prisma.messages.create({
-          data: {
-            senderId,
-            recieverId: user.id,
-            message,
-          },
-        })
-      );
+      await prisma.messages.create({
+        data: {
+          senderId: senderId, // From request
+          recieverId: user.id,
+          message: message,
+        },
+      });
     }
 
-    // Step 3: Send bot replies
-console.log("Broadcasting messages using createMany for peak speed...");
+  // Step 3: Send bot replies faster
+console.log("Broadcasting random replies in parallel...");
 
-// Step 1: Fetch all valid bot users
 const botUsers = await prisma.user.findMany({
   where: {
     id: {
@@ -646,39 +639,46 @@ const botUsers = await prisma.user.findMany({
 });
 const validBotIds = botUsers.map(bot => bot.id);
 
-// Step 2: Build all messages in memory
-const allMessages = [];
+// Control batch size to avoid overloading the DB
+const BATCH_SIZE = 100;
 
 for (const replySenderId of validBotIds) {
+  const batch = [];
+
   for (const user of users) {
     const randomReplies = generateReplies(message);
     const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
 
-    allMessages.push({
-      senderId: replySenderId,
-      recieverId: user.id,
-      message: randomReply,
-    });
+    batch.push(
+      prisma.messages.create({
+        data: {
+          senderId: replySenderId,
+          recieverId: user.id,
+          message: randomReply,
+        },
+      })
+    );
+
+    // Send in batches
+    if (batch.length >= BATCH_SIZE) {
+      await Promise.all(batch);
+      batch.length = 0; // reset the batch
+    }
+  }
+
+  // Flush remaining items
+  if (batch.length > 0) {
+    await Promise.all(batch);
   }
 }
 
-// Step 3: Insert in large chunks using createMany
-const CHUNK_SIZE = 10;
-
-for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
-  const chunk = allMessages.slice(i, i + CHUNK_SIZE);
-  await prisma.messages.createMany({
-    data: chunk,
-    skipDuplicates: true, // optional: skip if you might reinsert
-  });
-}
-
-
+    console.log("All messages sent individually.");
+    return res.status(200).json({ message: "Broadcasted.", status: true });
   } catch (err) {
     console.error("Broadcast error:", err);
+    next(err);
   }
 };
-
 
 
 export const onBoardUser = async (request, response, next) => {
