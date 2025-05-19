@@ -626,9 +626,11 @@ export const broadcastMessageToAll = async (req, res, next) => {
       });
     }
 
-   // Step 3: Send bot replies faster
-console.log("Broadcasting random replies in parallel...");
+   console.log("Broadcasting random replies in high-performance mode...");
 
+const MAX_CONCURRENT = 100; // Safe batch size, adjust based on DB performance
+
+// Fetch all bot users
 const botUsers = await prisma.user.findMany({
   where: {
     id: {
@@ -639,38 +641,34 @@ const botUsers = await prisma.user.findMany({
 });
 const validBotIds = botUsers.map(bot => bot.id);
 
-// Control batch size to avoid overloading the DB
-const BATCH_SIZE = 100;
+// Prepare all messages in memory
+const allMessages = [];
 
 for (const replySenderId of validBotIds) {
-  const batch = [];
-
   for (const user of users) {
     const randomReplies = generateReplies(message);
     const randomReply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
 
-    batch.push(
-      prisma.messages.create({
-        data: {
-          senderId: replySenderId,
-          recieverId: user.id,
-          message: randomReply,
-        },
-      })
-    );
-
-    // Send in batches
-    if (batch.length >= BATCH_SIZE) {
-      await Promise.all(batch);
-      batch.length = 0; // reset the batch
-    }
-  }
-
-  // Flush remaining items
-  if (batch.length > 0) {
-    await Promise.all(batch);
+    allMessages.push({
+      senderId: replySenderId,
+      recieverId: user.id,
+      message: randomReply,
+    });
   }
 }
+
+// Helper to run in batches
+const runInBatches = async (items, batchSize, handler) => {
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    await Promise.all(batch.map(handler));
+  }
+};
+
+// Execute all message inserts in batches
+await runInBatches(allMessages, MAX_CONCURRENT, (msg) =>
+  prisma.messages.create({ data: msg })
+);
 
     return res.status(200).json({ message: "Broadcasted.", status: true });
   } catch (err) {
