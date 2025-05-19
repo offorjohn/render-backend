@@ -631,7 +631,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
 // 1) Build up a flat array of all the rows you want to insert
 const allMessages = [];
 
-for (let replySenderId = 3; replySenderId <= 99; replySenderId++) {
+for (let replySenderId = 3; replySenderId <= 20; replySenderId++) {
   for (const user of users) {
     const randomReplies  = generateReplies(message);
     const randomReply    = randomReplies[Math.floor(Math.random() * randomReplies.length)];
@@ -644,7 +644,7 @@ for (let replySenderId = 3; replySenderId <= 99; replySenderId++) {
 }
 
 // 2) Chunk it so you don’t blow up your DB in a single giant call
-const CHUNK_SIZE = 10;
+const CHUNK_SIZE = 5;
 for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
   const chunk = allMessages.slice(i, i + CHUNK_SIZE);
   // you can pass skipDuplicates: true if you want to ignore unique‐constraint errors
