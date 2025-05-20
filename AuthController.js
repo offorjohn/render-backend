@@ -240,392 +240,53 @@ export const addUserWithCustomId = async (req, res, next) => {
 };
 
 const generateReplies = (message) => {
-  // Message patterns to detect and match the context
-  const positiveReplies = [
-   "Who is this?"
-
-"Andy, is this you?"
-
-"Ok love, saved it. x"
-
-"Wrong number."
-
-"Don't know who you are, sorry."
-
-"Who've you changed to?"
-
-"Hi Elen, Mark just bought a new car and Mikey graduated!"
-
-"Hope you changed to a cheaper one — mine's $30! Haha. x"
-
-"Are you gone yet? What happened to your phone?"
-
-"Hey pal, just told about new number — any chance tonight?"
-
-"Chicken's in the oven. x Let me know when you come!"
-
-"Who is it?"
-
-"Which one’s this? x"
-
-"Got your message."
-
-"Friday in Fletchers — I met this new guy. Can't wait to see you both when you're home. x Mum"
-
-"Hi Elle, how are you getting on? The weather’s great — I see Europe’s having storms."
-
-"Hi, was just thinking about you and your travels. x"
-
-"Take care of yourself. Love ya."
-
-"Piss off!"
-
-"Hi.",
-  ];
-
-  const neutralReplies = [
-   "Who is this?"
-
-"Andy, is this you?"
-
-"Ok love, saved it. x"
-
-"Wrong number."
-
-"Don't know who you are, sorry."
-
-"Who've you changed to?"
-
-"Hi Elen, Mark just bought a new car and Mikey graduated!"
-
-"Hope you changed to a cheaper one — mine's $30! Haha. x"
-
-"Are you gone yet? What happened to your phone?"
-
-"Hey pal, just told about new number — any chance tonight?"
-
-"Chicken's in the oven. x Let me know when you come!"
-
-"Who is it?"
-
-"Which one’s this? x"
-
-"Got your message."
-
-"Friday in Fletchers — I met this new guy. Can't wait to see you both when you're home. x Mum"
-
-"Hi Elle, how are you getting on? The weather’s great — I see Europe’s having storms."
-
-"Hi, was just thinking about you and your travels. x"
-
-"Take care of yourself. Love ya."
-
-"Piss off!"
-
-"Hi.",
-  ];
-
-  const confusedReplies = [
-   "Who is this?"
-
-"Andy, is this you?"
-
-"Ok love, saved it. x"
-
-"Wrong number."
-
-"Don't know who you are, sorry."
-
-"Who've you changed to?"
-
-"Hi Elen, Mark just bought a new car and Mikey graduated!"
-
-"Hope you changed to a cheaper one — mine's $30! Haha. x"
-
-"Are you gone yet? What happened to your phone?"
-
-"Hey pal, just told about new number — any chance tonight?"
-
-"Chicken's in the oven. x Let me know when you come!"
-
-"Who is it?"
-
-"Which one’s this? x"
-
-"Got your message."
-
-"Friday in Fletchers — I met this new guy. Can't wait to see you both when you're home. x Mum"
-
-"Hi Elle, how are you getting on? The weather’s great — I see Europe’s having storms."
-
-"Hi, was just thinking about you and your travels. x"
-
-"Take care of yourself. Love ya."
-
-"Piss off!"
-
-"Hi.",
-  ];
-
-  const followUpReplies = [
-   "Who is this?"
-
-"Andy, is this you?"
-
-"Ok love, saved it. x"
-
-"Wrong number."
-
-"Don't know who you are, sorry."
-
-"Who've you changed to?"
-
-"Hi Elen, Mark just bought a new car and Mikey graduated!"
-
-"Hope you changed to a cheaper one — mine's $30! Haha. x"
-
-"Are you gone yet? What happened to your phone?"
-
-"Hey pal, just told about new number — any chance tonight?"
-
-"Chicken's in the oven. x Let me know when you come!"
-
-"Who is it?"
-
-"Which one’s this? x"
-
-"Got your message."
-
-"Friday in Fletchers — I met this new guy. Can't wait to see you both when you're home. x Mum"
-
-"Hi Elle, how are you getting on? The weather’s great — I see Europe’s having storms."
-
-"Hi, was just thinking about you and your travels. x"
-
-"Take care of yourself. Love ya."
-
-"Piss off!"
-
-"Hi.",
-  ];
-
-  // Detect if the message contains a greeting (hello/hi)
-  const greetings = [
-    "Who is this?"
-
-"Andy, is this you?"
-
-"Ok love, saved it. x"
-
-"Wrong number."
-
-"Don't know who you are, sorry."
-
-"Who've you changed to?"
-
-"Hi Elen, Mark just bought a new car and Mikey graduated!"
-
-"Hope you changed to a cheaper one — mine's $30! Haha. x"
-
-"Are you gone yet? What happened to your phone?"
-
-"Hey pal, just told about new number — any chance tonight?"
-
-"Chicken's in the oven. x Let me know when you come!"
-
-"Who is it?"
-
-"Which one’s this? x"
-
-"Got your message."
-
-"Friday in Fletchers — I met this new guy. Can't wait to see you both when you're home. x Mum"
-
-"Hi Elle, how are you getting on? The weather’s great — I see Europe’s having storms."
-
-"Hi, was just thinking about you and your travels. x"
-
-"Take care of yourself. Love ya."
-
-"Piss off!"
-
-"Hi.",
-  ];
-
-  const helpGreetings = [
-    "how can I help",
-    "how may I assist",
-    "what can I do for you",
-    "how can I assist",
-    "is there anything I can do",
-    "how can I be of help",
-    "how can I support you",
-    "how may I help",
-    "is there something you need",
+  const replies = [
+    "Who is this?",
+    "Andy, is this you?",
+    "Ok love, saved it. x",
+    "Wrong number.",
+    "Don't know who you are, sorry.",
+    "Who've you changed to?",
+    "Hi Elen, Mark just bought a new car and Mikey graduated!",
+    "Hope you changed to a cheaper one — mine's $30! Haha. x",
+    "Are you gone yet? What happened to your phone?",
+    "Hey pal, just told about new number — any chance tonight?",
+    "Chicken's in the oven. x Let me know when you come!",
+    "Who is it?",
+    "Which one’s this? x",
+    "Got your message.",
+    "Friday in Fletchers — I met this new guy. Can't wait to see you both when you're home. x Mum",
+    "Hi Elle, how are you getting on? The weather’s great — I see Europe’s having storms.",
+    "Hi, was just thinking about you and your travels. x",
+    "Take care of yourself. Love ya.",
+    "Piss off!",
+    "Hi.",
   ];
 
   const lowerMessage = message.toLowerCase();
 
-  // Check if the message contains a greeting
-  if (greetings.some((greeting) => lowerMessage.includes(greeting))) {
-    const greetingReplies = [
-      "Hello! How can I assist you today?",
-
-      "Hi there! How may I help you?",
-      "Hey! What can I do for you?",
-      "Greetings! How can I be of help?",
-      "Hello! How can I support you today?",
-      "Hi! Is there something you need assistance with?",
-      "Hey there! What’s on your mind?",
-      "Hello! How can I help you today?",
-      "Hello! How can I help you today?",
-      "Hey! Need help with something?",
-      "Greetings! What can I assist with?",
-      "Hello there! How may I help?",
-      "Hi! Let me know if you need anything!",
-      "Hey, I’m here if you need me!",
-      "Hey there! How can I be of service?",
-      "Hi! What can I do for you?",
-      "Greetings! How may I assist?",
-      "Hello! What can I do for you today?",
-      "Hey there! How can I make your day easier?",
-      "Hi! What assistance do you need today?",
-      "Hello, how’s your day going? How can I help?",
-      "Hey! I’m here to help, what’s up?",
-      "Hi! How can I assist in making things better for you?",
-      "Greetings! What’s on your mind today?",
-      "Hey, what can I do for you today?",
-      "Hello! How may I serve you today?",
-      "Hey there! Need help or guidance with something?",
-      "Hi! How can I be of service to you today?",
-      "Greetings! What can I support you with today?",
-      "Hello! Is there something I can assist you with?",
-      "Hi there! What would you like help with today?",
-      "Hey! How can I be helpful today?",
-      "Greetings! What do you need assistance with?",
-    ];
-    return [
-      greetingReplies[Math.floor(Math.random() * greetingReplies.length)],
-    ];
-  }
-
-  // Check if the message contains a help-related greeting
-  if (helpGreetings.some((greeting) => lowerMessage.includes(greeting))) {
-    const helpReplies = [
-      "Hello! How can I assist you today?",
-      "Hi there! How may I help you?",
-      "Hey! What can I do for you?",
-      "Greetings! How can I be of help?",
-      "Hello! How can I support you today?",
-      "Hi! Is there something you need assistance with?",
-      "Hey there! What’s on your mind?",
-      "Hello! How can I help you today?",
-      "Hey! Need help with something?",
-      "Greetings! What can I assist with?",
-      "Hello there! How may I help?",
-      "Hi! Let me know if you need anything!",
-      "Hey, I’m here if you need me!",
-      "Hey there! How can I be of service?",
-      "Hi! What can I do for you?",
-      "Greetings! How may I assist?",
-      "Hello! What can I do for you today?",
-      "Hey there! How can I make your day easier?",
-      "Hi! What assistance do you need today?",
-      "Hello, how’s your day going? How can I help?",
-      "Hey! I’m here to help, what’s up?",
-      "Hi! How can I assist in making things better for you?",
-      "Greetings! What’s on your mind today?",
-      "Hey, what can I do for you today?",
-      "Hello! How may I serve you today?",
-      "Hey there! Need help or guidance with something?",
-      "Hi! How can I be of service to you today?",
-      "Greetings! What can I support you with today?",
-      "Hello! Is there something I can assist you with?",
-      "Hi there! What would you like help with today?",
-      "Hey! How can I be helpful today?",
-      "Greetings! What do you need assistance with?",
-      "Hello! How can I make things easier for you today?",
-      "Hi! Can I help you with anything today?",
-      "Hey, what do you need assistance with today?",
-      "Hello! Let me know how I can assist you!",
-      "Hi there! What can I do for you right now?",
-      "Hey! How can I make your day better?",
-      "Greetings! What can I help you with?",
-      "Hello! I’m here to assist, what’s up?",
-      "Hi there! Is there anything I can assist with?",
-      "Hey, how can I be of service today?",
-      "Hello! What would you like assistance with?",
-      "Hey! Need a hand with something?",
-      "Hi! How can I make things smoother for you?",
-      "Greetings! What can I do to help?",
-      "Hello! How may I help you out today?",
-      "Hi! Let me know if there’s anything I can help with.",
-      "Hey there! How’s everything going today?",
-      "Hello! How can I be of assistance to you?",
-      "Hi! What do you need help with today?",
-      "Hey! How can I support you right now?",
-      "Greetings! What assistance can I offer?",
-      "Hello! I’m here to help you, what’s on your mind?",
-      "Hey! I’m happy to help, what do you need?",
-      "Hi there! What can I do for you today?",
-      "Hello! Is there anything I can do to support you?",
-      "Hey! Need any help with something today?",
-      "Hi! I’m here for anything you need today.",
-      "Greetings! How can I make things easier for you?",
-      "Hello! What can I assist you with right now?",
-      "Hi there! How can I help make things better?",
-      "Hey! What’s on your mind? How can I help?",
-    ];
-    return [helpReplies[Math.floor(Math.random() * helpReplies.length)]];
-  }
-
-  // Detect the nature of the message (simple classification by keywords or length)
+  // Classify based on message content
   if (
-    message.includes("thank") ||
-    message.includes("thanks") ||
-    message.includes("thank you") ||
-    message.includes("appreciate") ||
-    message.includes("grateful") ||
-    message.includes("thanks a lot") ||
-    message.includes("thanks so much") ||
-    message.includes("many thanks") ||
-    message.includes("thanks again") ||
-    message.includes("thanks a ton")
+    /thank|thanks|appreciate|grateful|thanks a lot|so much|many thanks|thanks again|thanks a ton/.test(lowerMessage)
   ) {
-    return positiveReplies;
+    return [getRandomReply(replies)];
   } else if (
-    message.includes("help") ||
-    message.includes("need") ||
-    message.includes("assistance") ||
-    message.includes("support") ||
-    message.includes("could you help") ||
-    message.includes("can you assist") ||
-    message.includes("need help") ||
-    message.includes("I don’t understand") ||
-    message.includes("clarification") ||
-    message.includes("can’t find") ||
-    message.includes("I’m lost") ||
-    message.includes("not sure")
+    /help|need|assistance|support|could you help|can you assist|i don’t understand|clarification|can’t find|i’m lost|not sure/.test(lowerMessage)
   ) {
-    return confusedReplies;
+    return [getRandomReply(replies)];
   } else if (
-    message.includes("follow up") ||
-    message.includes("update") ||
-    message.includes("follow up on") ||
-    message.includes("check in") ||
-    message.includes("any progress") ||
-    message.includes("status update") ||
-    message.includes("how’s it going") ||
-    message.includes("how are we doing") ||
-    message.includes("any news") ||
-    message.includes("what’s the update") ||
-    message.includes("just checking in")
+    /follow up|update|check in|any progress|status update|how’s it going|how are we doing|any news|what’s the update|just checking in/.test(lowerMessage)
   ) {
-    return followUpReplies;
+    return [getRandomReply(replies)];
   } else {
-    return neutralReplies; // Default neutral reply
+    return [getRandomReply(replies)];
   }
 };
+
+// Utility function to return a random reply
+function getRandomReply(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
 
 
 export const broadcastMessageToAll = async (req, res, next) => {
