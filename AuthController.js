@@ -242,172 +242,214 @@ export const addUserWithCustomId = async (req, res, next) => {
 const generateReplies = (message) => {
   // Message patterns to detect and match the context
   const positiveReplies = [
-    "Received your message, thanks!",
-    "Got it, I'll take care of it.",
-    "Sounds good, I'll follow up soon.",
-    "Thanks for the update, I'll check it out.",
-    "Got your message, will respond shortly.",
-    "Noted, appreciate it!",
-    "Thanks, I'll get on it right away.",
-    "Perfect, I'll move forward with that.",
-    "Great, I'll handle it from here.",
-    "Thanks for the info, I'll look into it.",
-    "Awesome, I’ll update you soon.",
-    "Noted, I’ll follow up shortly.",
-    "Understood, I’ll take care of that.",
-    "Got it, will keep you posted.",
-    "Thanks, I’ll proceed with this.",
-    "Great, I’ve got all I need.",
-    "Thanks, I’ll update you as soon as possible.",
-    "Perfect, I’ve made a note of it.",
-    "Noted, I’ll handle it as discussed.",
-    "Thanks, I’ll start working on it now.",
-    "Got it, everything is clear.",
-    "Sounds good, let me know if you need anything.",
-    "Thanks for the clarification, I’ll go ahead.",
-    "Understood, I’ll make the necessary adjustments.",
-    "Got it, I’ll take the next step.",
-    "Thanks, I’ll make sure it’s done.",
-    "Perfect, that makes sense, I’ll get to it.",
-    "Got it, I’ll keep you in the loop.",
-    "Thanks, I'll finalize the details.",
-    "Noted, I'll be in touch soon.",
-    "Okay, I’ll process that promptly.",
-    "Thanks, I’ll send the update once I’m done.",
-    "Understood, I’ll make the changes right away.",
-    "Got it, I’ll get started on it.",
-    "Perfect, I’ll let you know when it's ready.",
-    "Thanks, I’ll check in with the progress soon.",
-    "Sounds good, I’ll move ahead with the plan.",
-    "Got it, I’ll be sure to follow up.",
-    "Thanks, I’ll get back to you shortly.",
-    "Understood, I’ll finish that task shortly.",
-    "Perfect, I’ll get the details to you soon.",
-    "Got it, I’ll make sure it’s completed.",
-    "Thanks, I’ll take care of that right away.",
-    "Understood, I’ll complete that ASAP.",
-    "Got it, I’ll follow through on that.",
-    "Sounds good, I’ll get started immediately.",
-    "Thanks, I’ll update you once done.",
-    "Understood, I’ll proceed accordingly.",
+   "Who is this?"
+
+"Andy, is this you?"
+
+"Ok love, saved it. x"
+
+"Wrong number."
+
+"Don't know who you are, sorry."
+
+"Who've you changed to?"
+
+"Hi Elen, Mark just bought a new car and Mikey graduated!"
+
+"Hope you changed to a cheaper one — mine's $30! Haha. x"
+
+"Are you gone yet? What happened to your phone?"
+
+"Hey pal, just told about new number — any chance tonight?"
+
+"Chicken's in the oven. x Let me know when you come!"
+
+"Who is it?"
+
+"Which one’s this? x"
+
+"Got your message."
+
+"Friday in Fletchers — I met this new guy. Can't wait to see you both when you're home. x Mum"
+
+"Hi Elle, how are you getting on? The weather’s great — I see Europe’s having storms."
+
+"Hi, was just thinking about you and your travels. x"
+
+"Take care of yourself. Love ya."
+
+"Piss off!"
+
+"Hi.",
   ];
 
   const neutralReplies = [
-    "Okay, noted.",
-    "Understood, thanks.",
-    "Alright, I'll process that now.",
-    "Message received, thank you.",
-    "Got it, I'll make a note of it.",
-    "Noted, thanks for letting me know.",
-    "Okay, I'll take care of that.",
-    "Understood, will handle it shortly.",
-    "Got it, I’ll check on that.",
-    "Okay, I’ll look into it soon.",
-    "Noted, I’ll get to it when I can.",
-    "Alright, I'll follow up with that.",
-    "Thanks for sharing, I’ll keep that in mind.",
-    "Got it, I’ll make sure it's addressed.",
-    "Okay, I'll make the change.",
-    "Understood, will review that shortly.",
-    "Thanks, I'll look into it soon.",
-    "Okay, I’ll get started on that.",
-    "Got it, I’ll handle it in due course.",
-    "Alright, I’ll take care of that when possible.",
-    "Noted, I’ll get back to you soon.",
-    "Okay, I’ll make the necessary updates.",
-    "Understood, I’ll take action on that.",
-    "Got it, I’ll follow through on this.",
-    "Alright, I'll update you once done.",
-    "Okay, I’ll go over it.",
-    "Got it, I’ll check back in soon.",
-    "Thanks, I’ll make a note of it.",
-    "Understood, I’ll get back to you when finished.",
-    "Okay, I’ll confirm once done.",
-    "Got it, I’ll proceed as needed.",
-    "Alright, I’ll make those adjustments.",
-    "Understood, I’ll check and update soon.",
-    "Got it, I’ll keep you posted.",
-    "Okay, I’ll get on it shortly.",
-    "Noted, I’ll check on it and confirm.",
-    "Alright, I'll make sure it's done.",
-    "Got it, I’ll send an update later.",
-    "Okay, I’ll follow through on that.",
-    "Understood, I’ll process it when I can.",
-    "Alright, I’ll take care of it after this.",
-    "Got it, I’ll let you know when it’s completed.",
-    "Okay, I’ll update you as soon as possible.",
-    "Understood, I’ll make the change accordingly.",
-    "Got it, I’ll let you know once it’s done.",
+   "Who is this?"
+
+"Andy, is this you?"
+
+"Ok love, saved it. x"
+
+"Wrong number."
+
+"Don't know who you are, sorry."
+
+"Who've you changed to?"
+
+"Hi Elen, Mark just bought a new car and Mikey graduated!"
+
+"Hope you changed to a cheaper one — mine's $30! Haha. x"
+
+"Are you gone yet? What happened to your phone?"
+
+"Hey pal, just told about new number — any chance tonight?"
+
+"Chicken's in the oven. x Let me know when you come!"
+
+"Who is it?"
+
+"Which one’s this? x"
+
+"Got your message."
+
+"Friday in Fletchers — I met this new guy. Can't wait to see you both when you're home. x Mum"
+
+"Hi Elle, how are you getting on? The weather’s great — I see Europe’s having storms."
+
+"Hi, was just thinking about you and your travels. x"
+
+"Take care of yourself. Love ya."
+
+"Piss off!"
+
+"Hi.",
   ];
 
   const confusedReplies = [
-    "Can you clarify that?",
-    "I'm not sure I follow, could you explain?",
-    "What exactly do you mean by that?",
-    "Can you provide more details?",
-    "I'm not sure what you're asking, can you elaborate?",
-    "Can you help me understand better?",
-    "Could you rephrase that?",
-    "I’m not sure I understand, could you explain further?",
-    "What do you mean by that exactly?",
-    "I need some clarification on that.",
-    "Could you provide more context?",
-    "Could you explain that again?",
-    "I'm not sure I follow, could you clarify?",
-    "Can you give me an example?",
-    "Could you break that down for me?",
-    "I'm a bit confused, could you elaborate?",
-    "Can you explain that in a different way?",
-    "Sorry, I don’t quite understand. Could you explain?",
-    "Could you elaborate a bit more on that?",
-    "I’m not entirely clear on what you mean, could you clarify?",
-    "Could you go over that again?",
-    "I need a bit more information to follow.",
-    "I’m not sure I grasp that, can you explain it differently?",
-    "Could you expand on that point?",
-    "Sorry, I’m a little unclear, could you rephrase?",
-    "Can you provide some more examples?",
-    "Could you give me a little more context?",
-    "I’m not sure I’m following, could you clarify?",
-    "Could you give more information about that?",
-    "I don’t quite get it, could you rephrase?",
-    "I’m confused, could you elaborate?",
-    "Can you help me understand what you're saying?",
-    "Sorry, could you go into more detail?",
-    "Could you explain that part a bit more?",
-    "Can you elaborate on that idea?",
-    "I'm unclear on what you're saying, can you clarify?",
-    "Could you be a little more specific?",
-    "I'm not following, can you explain further?",
-    "Could you explain what you mean by that?",
-    "I'm not entirely sure what you're asking, can you clarify?",
-    "Could you provide additional information on that?",
-    "Can you help me understand that better?",
-    "I’m having trouble following, can you clarify?",
-    "Can you clarify what you mean by that point?",
-    "I’m not following this part, could you explain it?",
-    "I don’t quite understand, can you explain it more clearly?",
-    "Can you help me make sense of that?",
+   "Who is this?"
+
+"Andy, is this you?"
+
+"Ok love, saved it. x"
+
+"Wrong number."
+
+"Don't know who you are, sorry."
+
+"Who've you changed to?"
+
+"Hi Elen, Mark just bought a new car and Mikey graduated!"
+
+"Hope you changed to a cheaper one — mine's $30! Haha. x"
+
+"Are you gone yet? What happened to your phone?"
+
+"Hey pal, just told about new number — any chance tonight?"
+
+"Chicken's in the oven. x Let me know when you come!"
+
+"Who is it?"
+
+"Which one’s this? x"
+
+"Got your message."
+
+"Friday in Fletchers — I met this new guy. Can't wait to see you both when you're home. x Mum"
+
+"Hi Elle, how are you getting on? The weather’s great — I see Europe’s having storms."
+
+"Hi, was just thinking about you and your travels. x"
+
+"Take care of yourself. Love ya."
+
+"Piss off!"
+
+"Hi.",
   ];
 
   const followUpReplies = [
-    "I'll check in with you soon on this.",
-    "I'll get back to you once I have more info.",
-    "Thanks for reaching out! I'll respond after checking in.",
-    "I'll follow up with an update shortly.",
-    "I'll let you know what I find out soon.",
+   "Who is this?"
+
+"Andy, is this you?"
+
+"Ok love, saved it. x"
+
+"Wrong number."
+
+"Don't know who you are, sorry."
+
+"Who've you changed to?"
+
+"Hi Elen, Mark just bought a new car and Mikey graduated!"
+
+"Hope you changed to a cheaper one — mine's $30! Haha. x"
+
+"Are you gone yet? What happened to your phone?"
+
+"Hey pal, just told about new number — any chance tonight?"
+
+"Chicken's in the oven. x Let me know when you come!"
+
+"Who is it?"
+
+"Which one’s this? x"
+
+"Got your message."
+
+"Friday in Fletchers — I met this new guy. Can't wait to see you both when you're home. x Mum"
+
+"Hi Elle, how are you getting on? The weather’s great — I see Europe’s having storms."
+
+"Hi, was just thinking about you and your travels. x"
+
+"Take care of yourself. Love ya."
+
+"Piss off!"
+
+"Hi.",
   ];
 
   // Detect if the message contains a greeting (hello/hi)
   const greetings = [
-    "hello",
-    "hi",
-    "hey",
-    "greetings",
-    "howdy",
-    "good morning",
-    "good afternoon",
-    "good evening",
+    "Who is this?"
+
+"Andy, is this you?"
+
+"Ok love, saved it. x"
+
+"Wrong number."
+
+"Don't know who you are, sorry."
+
+"Who've you changed to?"
+
+"Hi Elen, Mark just bought a new car and Mikey graduated!"
+
+"Hope you changed to a cheaper one — mine's $30! Haha. x"
+
+"Are you gone yet? What happened to your phone?"
+
+"Hey pal, just told about new number — any chance tonight?"
+
+"Chicken's in the oven. x Let me know when you come!"
+
+"Who is it?"
+
+"Which one’s this? x"
+
+"Got your message."
+
+"Friday in Fletchers — I met this new guy. Can't wait to see you both when you're home. x Mum"
+
+"Hi Elle, how are you getting on? The weather’s great — I see Europe’s having storms."
+
+"Hi, was just thinking about you and your travels. x"
+
+"Take care of yourself. Love ya."
+
+"Piss off!"
+
+"Hi.",
   ];
 
   const helpGreetings = [
