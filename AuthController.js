@@ -239,8 +239,9 @@ export const addUserWithCustomId = async (req, res, next) => {
   }
 };
 
+// Sequential reply generator
 const generateReplies = (() => {
-  const allReplies = [
+  const replies = [
     "Who is this?",
     "Andy, is this you?",
     "Ok love, saved it. x",
@@ -260,36 +261,20 @@ const generateReplies = (() => {
     "Hi, was just thinking about you and your travels. x",
     "Take care of yourself. Love ya.",
     "Piss off!",
-    "Hi.",
+    "Hi."
   ];
 
-  let remainingReplies = [...allReplies]; // clone for cycling
-
-  const getUniqueReply = () => {
-    if (remainingReplies.length === 0) {
-      remainingReplies = [...allReplies]; // reset when all are used
-    }
-    const index = Math.floor(Math.random() * remainingReplies.length);
-    const reply = remainingReplies.splice(index, 1)[0]; // remove & return
-    return reply;
-  };
+  let currentIndex = 0;
 
   return (message) => {
-    const lowerMessage = message.toLowerCase();
-
-    // Simple pattern matching (you can refine this later)
-    if (
-      /thank|thanks|appreciate|grateful|thanks a lot|so much|many thanks|thanks again|thanks a ton/.test(lowerMessage) ||
-      /help|need|assistance|support|could you help|can you assist|i don’t understand|clarification|can’t find|i’m lost|not sure/.test(lowerMessage) ||
-      /follow up|update|check in|any progress|status update|how’s it going|how are we doing|any news|what’s the update|just checking in/.test(lowerMessage)
-    ) {
-      return [getUniqueReply()];
-    } else {
-      return [getUniqueReply()];
-    }
+    // Optional: you can still classify based on message content if needed
+    // For now, always return the next reply in sequence
+    const reply = replies[currentIndex];
+    // Increment index, wrap around
+    currentIndex = (currentIndex + 1) % replies.length;
+    return [reply];
   };
 })();
-
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message, senderId } = req.body;
@@ -348,7 +333,7 @@ for (let replySenderId = 3; replySenderId <= 20; replySenderId++) {
 }
 
 // 2) Chunk it so you don’t blow up your DB in a single giant call
-const CHUNK_SIZE = 11;
+const CHUNK_SIZE = 100;
 for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
   const chunk = allMessages.slice(i, i + CHUNK_SIZE);
   // you can pass skipDuplicates: true if you want to ignore unique‐constraint errors
