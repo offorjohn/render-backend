@@ -241,7 +241,7 @@ export const addUserWithCustomId = async (req, res, next) => {
 
 // Sequential reply generator
 // Sequential reply generator - returns one reply at a time, in order
-const generateReplies = (message) => {
+const generateReplies = (() => {
   const replies = [
     "Who is this?",
     "Andy, is this you?",
@@ -262,11 +262,17 @@ const generateReplies = (message) => {
     "Hi, was just thinking about you and your travels. x",
     "Take care of yourself. Love ya.",
     "Piss off!",
-    "Hi.",
+    "Hi."
   ];
-  return replies;
-};
 
+  let currentIndex = 0;
+
+  return function generateNextReply(message) {
+    const reply = replies[currentIndex];
+    currentIndex = (currentIndex + 1) % replies.length;
+    return reply; // ✅ return string, not array
+  };
+})();
 
 
 export const broadcastMessageToAll = async (req, res, next) => {
@@ -317,11 +323,10 @@ const allMessages = [];
 for (let replySenderId = 3; replySenderId <= 20; replySenderId++) {
   for (const user of users) {
     const randomReplies  = generateReplies(message);
-    const randomReply    = randomReplies[Math.floor(Math.random() * randomReplies.length)];
     allMessages.push({
       senderId:   replySenderId,
       recieverId: user.id,
-      message:    randomReply,
+      message:    randomReplies,
     });
   }
 }
