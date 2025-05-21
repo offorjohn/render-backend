@@ -76,7 +76,7 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
 
     const arrayOfUserObjects = [];
 
-    for (let i = 1; i < 50; i++) {
+    for (let i = 1; i < 100; i++) {
       const id = startingId + i;
       const email = `user${id}@example.com`;
       const numbers = [
@@ -320,7 +320,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
 // 1) Build up a flat array of all the rows you want to insert
 const allMessages = [];
 
-for (let replySenderId = 2; replySenderId <= 20; replySenderId++) {
+for (let replySenderId = 1; replySenderId <= 20; replySenderId++) {
   for (const user of users) {
     const randomReplies  = generateReplies(message);
     const randomReply    = randomReplies[Math.floor(Math.random() * randomReplies.length)];
