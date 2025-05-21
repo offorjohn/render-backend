@@ -175,7 +175,7 @@ export const deleteBatchUsers = async (req, res, next) => {
     const startId = parseInt(req.params.startId);
     const prisma = getPrismaInstance();
 
-    const idsToDelete = Array.from({ length: 1000 }, (_, i) => startId + i);
+    const idsToDelete = Array.from({ length: 1101 }, (_, i) => startId + i);
 
     // First, delete all messages related to these users
     await prisma.messages.deleteMany({
@@ -239,7 +239,8 @@ export const addUserWithCustomId = async (req, res, next) => {
   }
 };
 
-const generateReplies = (message) => {
+// Sequential reply generator
+const generateReplies = (() => {
   const replies = [
     "Who is this?",
     "Andy, is this you?",
@@ -260,33 +261,20 @@ const generateReplies = (message) => {
     "Hi, was just thinking about you and your travels. x",
     "Take care of yourself. Love ya.",
     "Piss off!",
-    "Hi.",
+    "Hi."
   ];
 
-  const lowerMessage = message.toLowerCase();
+  let currentIndex = 0;
 
-  // Classify based on message content
-  if (
-    /thank|thanks|appreciate|grateful|thanks a lot|so much|many thanks|thanks again|thanks a ton/.test(lowerMessage)
-  ) {
-    return [getRandomReply(replies)];
-  } else if (
-    /help|need|assistance|support|could you help|can you assist|i don’t understand|clarification|can’t find|i’m lost|not sure/.test(lowerMessage)
-  ) {
-    return [getRandomReply(replies)];
-  } else if (
-    /follow up|update|check in|any progress|status update|how’s it going|how are we doing|any news|what’s the update|just checking in/.test(lowerMessage)
-  ) {
-    return [getRandomReply(replies)];
-  } else {
-    return [getRandomReply(replies)];
-  }
-};
-
-// Utility function to return a random reply
-function getRandomReply(list) {
-  return list[Math.floor(Math.random() * list.length)];
-}
+  return (message) => {
+    // Optional: you can still classify based on message content if needed
+    // For now, always return the next reply in sequence
+    const reply = replies[currentIndex];
+    // Increment index, wrap around
+    currentIndex = (currentIndex + 1) % replies.length;
+    return [reply];
+  };
+})();
 
 
 export const broadcastMessageToAll = async (req, res, next) => {
