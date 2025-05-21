@@ -175,7 +175,7 @@ export const deleteBatchUsers = async (req, res, next) => {
     const startId = parseInt(req.params.startId);
     const prisma = getPrismaInstance();
 
-    const idsToDelete = Array.from({ length: 55 }, (_, i) => startId + i);
+    const idsToDelete = Array.from({ length: 100 }, (_, i) => startId + i);
 
     // First, delete all messages related to these users
     await prisma.messages.deleteMany({
@@ -239,9 +239,7 @@ export const addUserWithCustomId = async (req, res, next) => {
   }
 };
 
-// Sequential reply generator
-// Sequential reply generator - returns one reply at a time, in order
-const generateReplies = (() => {
+const generateReplies = (message) => {
   const replies = [
     "Who is this?",
     "Andy, is this you?",
@@ -262,17 +260,11 @@ const generateReplies = (() => {
     "Hi, was just thinking about you and your travels. x",
     "Take care of yourself. Love ya.",
     "Piss off!",
-    "Hi."
+    "Hi.",
   ];
+  return replies;
+};
 
-  let currentIndex = 0;
-
-  return function generateNextReply(message) {
-    const reply = replies[currentIndex];
-    currentIndex = (currentIndex + 1) % replies.length;
-    return [reply];
-  };
-})();
 
 
 export const broadcastMessageToAll = async (req, res, next) => {
@@ -320,7 +312,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
 // 1) Build up a flat array of all the rows you want to insert
 const allMessages = [];
 
-for (let replySenderId = 1; replySenderId <= 20; replySenderId++) {
+for (let replySenderId = 3; replySenderId <= 20; replySenderId++) {
   for (const user of users) {
     const randomReplies  = generateReplies(message);
     const randomReply    = randomReplies[Math.floor(Math.random() * randomReplies.length)];
@@ -343,8 +335,6 @@ for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
   });
 }
 
-console.log(`Inserted ${allMessages.length} messages in ${Math.ceil(allMessages.length / CHUNK_SIZE)} batch(es).`);
-
 
     console.log("All messages sent individually.");
     return res.status(200).json({ message: "Broadcasted.", status: true });
@@ -352,8 +342,7 @@ console.log(`Inserted ${allMessages.length} messages in ${Math.ceil(allMessages.
     console.error("Broadcast error:", err);
     next(err);
   }
-};
-
+}
 
 export const onBoardUser = async (request, response, next) => {
   try {
