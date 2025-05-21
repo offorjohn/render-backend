@@ -264,31 +264,8 @@ const generateReplies = (message) => {
     "Piss off!",
     "Hi.",
   ];
-
-  const lowerMessage = message.toLowerCase();
-
-  // Classify based on message content
-  if (
-    /thank|thanks|appreciate|grateful|thanks a lot|so much|many thanks|thanks again|thanks a ton/.test(lowerMessage)
-  ) {
-    return [getRandomReply(replies)];
-  } else if (
-    /help|need|assistance|support|could you help|can you assist|i don’t understand|clarification|can’t find|i’m lost|not sure/.test(lowerMessage)
-  ) {
-    return [getRandomReply(replies)];
-  } else if (
-    /follow up|update|check in|any progress|status update|how’s it going|how are we doing|any news|what’s the update|just checking in/.test(lowerMessage)
-  ) {
-    return [getRandomReply(replies)];
-  } else {
-    return [getRandomReply(replies)];
-  }
+  return replies;
 };
-
-// Utility function to return a random reply
-function getRandomReply(list) {
-  return list[Math.floor(Math.random() * list.length)];
-}
 
 
 
@@ -331,36 +308,51 @@ export const broadcastMessageToAll = async (req, res, next) => {
       });
     }
 
-    // Step 2: Send random replies from bot/system user range
-   console.log("Broadcasting random replies in bulk…");
-
-// 1) Build up a flat array of all the rows you want to insert
+   // 1) Build up a flat array of all the rows you want to insert
 const allMessages = [];
 
 for (let replySenderId = 3; replySenderId <= 20; replySenderId++) {
+  // start each sender with a fresh, shuffled copy of all possible replies
+  let availableReplies = shuffleArray(generateReplies(message));
+
   for (const user of users) {
-    const randomReplies  = generateReplies(message);
-    const randomReply    = randomReplies[Math.floor(Math.random() * randomReplies.length)];
+    // if we run out of unique replies, refresh & reshuffle
+    if (availableReplies.length === 0) {
+      availableReplies = shuffleArray(generateReplies(message));
+    }
+
+    // draw one out without replacement
+    const reply = availableReplies.pop();
+
     allMessages.push({
       senderId:   replySenderId,
-      recieverId: user.id,
-      message:    randomReply,
+      receiverId: user.id,
+      message:    reply,
     });
   }
 }
 
-// 2) Chunk it so you don’t blow up your DB in a single giant call
+// 2) Chunk‐insert into your DB
 const CHUNK_SIZE = 13;
 for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
   const chunk = allMessages.slice(i, i + CHUNK_SIZE);
-  // you can pass skipDuplicates: true if you want to ignore unique‐constraint errors
   await prisma.messages.createMany({
     data:           chunk,
     skipDuplicates: false,
   });
 }
-
 console.log(`Inserted ${allMessages.length} messages in ${Math.ceil(allMessages.length / CHUNK_SIZE)} batch(es).`);
+
+
+// ——— Utility: Fisher–Yates shuffle ———
+function shuffleArray(array) {
+  const a = array.slice();  // copy
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 
     console.log("All messages sent individually.");
