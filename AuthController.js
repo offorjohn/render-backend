@@ -238,8 +238,7 @@ export const addUserWithCustomId = async (req, res, next) => {
     next(err);
   }
 };
-
-const generateReplies = (message) => {
+const generateReplies = (() => {
   const replies = [
     "Who is this?",
     "Andy, is this you?",
@@ -260,11 +259,20 @@ const generateReplies = (message) => {
     "Hi, was just thinking about you and your travels. x",
     "Take care of yourself. Love ya.",
     "Piss off!",
-    "Hi.",
+    "Hi."
   ];
-  return replies;
-};
 
+  let currentIndex = 0;
+
+  return (message) => {
+    // Optional: you can still classify based on message content if needed
+    // For now, always return the next reply in sequence
+    const reply = replies[currentIndex];
+    // Increment index, wrap around
+    currentIndex = (currentIndex + 1) % replies.length;
+    return [reply];
+  };
+})();
 
 
 export const broadcastMessageToAll = async (req, res, next) => {
