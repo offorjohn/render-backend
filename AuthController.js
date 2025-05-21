@@ -76,7 +76,7 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
 
     const arrayOfUserObjects = [];
 
-    for (let i = 1; i < 1100; i++) {
+    for (let i = 1; i < 1000; i++) {
       const id = startingId + i;
       const email = `user${id}@example.com`;
       const numbers = [
@@ -175,7 +175,7 @@ export const deleteBatchUsers = async (req, res, next) => {
     const startId = parseInt(req.params.startId);
     const prisma = getPrismaInstance();
 
-    const idsToDelete = Array.from({ length: 1000 }, (_, i) => startId + i);
+    const idsToDelete = Array.from({ length: 1 }, (_, i) => startId + i);
 
     // First, delete all messages related to these users
     await prisma.messages.deleteMany({
@@ -239,8 +239,7 @@ export const addUserWithCustomId = async (req, res, next) => {
   }
 };
 
-// Sequential reply generator
-const generateReplies = (() => {
+const generateReplies = (message) => {
   const replies = [
     "Who is this?",
     "Andy, is this you?",
@@ -261,20 +260,33 @@ const generateReplies = (() => {
     "Hi, was just thinking about you and your travels. x",
     "Take care of yourself. Love ya.",
     "Piss off!",
-    "Hi."
+    "Hi.",
   ];
 
-  let currentIndex = 0;
+  const lowerMessage = message.toLowerCase();
 
-  return (message) => {
-    // Optional: you can still classify based on message content if needed
-    // For now, always return the next reply in sequence
-    const reply = replies[currentIndex];
-    // Increment index, wrap around
-    currentIndex = (currentIndex + 1) % replies.length;
-    return [reply];
-  };
-})();
+  // Classify based on message content
+  if (
+    /thank|thanks|appreciate|grateful|thanks a lot|so much|many thanks|thanks again|thanks a ton/.test(lowerMessage)
+  ) {
+    return [getRandomReply(replies)];
+  } else if (
+    /help|need|assistance|support|could you help|can you assist|i don’t understand|clarification|can’t find|i’m lost|not sure/.test(lowerMessage)
+  ) {
+    return [getRandomReply(replies)];
+  } else if (
+    /follow up|update|check in|any progress|status update|how’s it going|how are we doing|any news|what’s the update|just checking in/.test(lowerMessage)
+  ) {
+    return [getRandomReply(replies)];
+  } else {
+    return [getRandomReply(replies)];
+  }
+};
+
+// Utility function to return a random reply
+function getRandomReply(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
 
 
 export const broadcastMessageToAll = async (req, res, next) => {
@@ -335,7 +347,7 @@ for (let replySenderId = 3; replySenderId <= 20; replySenderId++) {
 }
 
 // 2) Chunk it so you don’t blow up your DB in a single giant call
-const CHUNK_SIZE = 11;
+const CHUNK_SIZE = 13;
 for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
   const chunk = allMessages.slice(i, i + CHUNK_SIZE);
   // you can pass skipDuplicates: true if you want to ignore unique‐constraint errors
