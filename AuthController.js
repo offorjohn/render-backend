@@ -175,7 +175,7 @@ export const deleteBatchUsers = async (req, res, next) => {
     const startId = parseInt(req.params.startId);
     const prisma = getPrismaInstance();
 
-    const idsToDelete = Array.from({ length: 100 }, (_, i) => startId + i);
+    const idsToDelete = Array.from({ length: 1000 }, (_, i) => startId + i);
 
     // First, delete all messages related to these users
     await prisma.messages.deleteMany({
