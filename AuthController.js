@@ -315,29 +315,9 @@ export const broadcastMessageToAll = async (req, res, next) => {
 const allMessages = [];
 
 for (let replySenderId = 3; replySenderId <= 20; replySenderId++) {
-  // Keep a per‐sender set of used replies (or you could do one global Set if you want
-  // absolutely no repeats across all senders)
-  const usedReplies = new Set();
-
-  // Pre-generate the pool of possible replies once per sender
-  const pool = generateReplies(message);
-
   for (const user of users) {
-    // Filter out replies we’ve already used
-    const available = pool.filter(r => !usedReplies.has(r));
-
-    // If we run out, you can either break or reset the pool (depending on your UX needs)
-    if (available.length === 0) {
-      console.warn(`No more unique replies for sender ${replySenderId}.`);
-      break;
-    }
-
-    // Pick one at random from the remaining pool
-    const randomReply = available[Math.floor(Math.random() * available.length)];
-
-    // Mark it as used
-    usedReplies.add(randomReply);
-
+    const randomReplies  = generateReplies(message);
+    const randomReply    = randomReplies[Math.floor(Math.random() * randomReplies.length)];
     allMessages.push({
       senderId:   replySenderId,
       recieverId: user.id,
@@ -350,15 +330,14 @@ for (let replySenderId = 3; replySenderId <= 20; replySenderId++) {
 const CHUNK_SIZE = 13;
 for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
   const chunk = allMessages.slice(i, i + CHUNK_SIZE);
+  // you can pass skipDuplicates: true if you want to ignore unique‐constraint errors
   await prisma.messages.createMany({
     data:           chunk,
-    skipDuplicates: false,  // you could also set this to true to ignore unique‐constraint errors
+    skipDuplicates: false,
   });
 }
 
 console.log(`Inserted ${allMessages.length} messages in ${Math.ceil(allMessages.length / CHUNK_SIZE)} batch(es).`);
-return res.status(200).json({ message: "Broadcasted.", status: true });
-
 
 
     console.log("All messages sent individually.");
