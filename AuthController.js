@@ -320,7 +320,7 @@ export const broadcastMessageToAll = async (req, res, next) => {
 // 1) Build up a flat array of all the rows you want to insert
 const allMessages = [];
 
-for (let replySenderId = 3; replySenderId <= 20; replySenderId++) {
+for (let replySenderId = 2; replySenderId <= 20; replySenderId++) {
   for (const user of users) {
     const randomReplies  = generateReplies(message);
     const randomReply    = randomReplies[Math.floor(Math.random() * randomReplies.length)];
