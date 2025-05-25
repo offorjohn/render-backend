@@ -164,7 +164,7 @@ const name = numbers[Math.floor(Math.random() * numbers.length)];
       skipDuplicates: true, // avoids inserting users with duplicate IDs
     });
 
-    return res.status(201).json({ message:  'Contacts created successfully.' });
+    return res.status(201).json({ message:  'Cont successfully.' });
   } catch (err) {
     next(err);
   }
