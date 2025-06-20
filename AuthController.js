@@ -239,40 +239,27 @@ export const addUserWithCustomId = async (req, res, next) => {
   }
 };
 
-
 const generateReplies = (() => {
-  const replies = [
-    "Who is this?",
-    "Andy, is this you?",
-    "Ok love, saved it. x",
-    "Wrong number.",
-    "Don't know who you are, sorry.",
-    "Who've you changed to?",
-    "Hi Elen, Mark just bought a new car and Mikey graduated!",
-    "Hope you changed to a cheaper one — mine's $30! Haha. x",
-    "Are you gone yet? What happened to your phone?",
-    "Hey pal, just told about new number — any chance tonight?",
-    "Chicken's in the oven. x Let me know when you come!",
-    "Who is it?",
-    "Which one’s this? x",
-    "Got your message.",
-    "Friday in Fletchers — I met this new guy. Can't wait to see you both when you're home. x Mum",
-    "Hi Elle, how are you getting on? The weather’s great — I see Europe’s having storms.",
-    "Hi, was just thinking about you and your travels. x",
-    "Take care of yourself. Love ya.",
-    "Piss off!",
-    "Hi."
-  ];
-
+  let replies = []; // no hardcoded replies
   let currentIndex = 0;
 
-  return (message) => {
-    // Optional: you can still classify based on message content if needed
-    // For now, always return the next reply in sequence
+  const setReplies = (newReplies) => {
+    if (Array.isArray(newReplies)) {
+      replies = newReplies;
+      currentIndex = 0; // reset index
+    }
+  };
+
+  const getReply = (message) => {
+    if (!replies.length) return ["No replies set."];
     const reply = replies[currentIndex];
-    // Increment index, wrap around
     currentIndex = (currentIndex + 1) % replies.length;
     return [reply];
+  };
+
+  return {
+    setReplies,
+    getReply
   };
 })();
 
