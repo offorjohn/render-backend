@@ -304,6 +304,83 @@ export const broadcastMessageToAll = async (req, res, next) => {
 };
 
 
+export const broadcastMessageToAll = async (req, res, next) => {
+  try {
+    const { message, senderId } = req.body;
+    if (!message || !senderId) {
+      console.log("❌ Missing message or senderId");
+      return res.status(400).json({ message: "Both message and senderId are required." });
+    }
+
+    const prisma = getPrismaInstance();
+    const SYSTEM_USER_ID = 100;
+
+    // Fetch all users excluding the system user
+    const users = await prisma.user.findMany({
+      where: { id: { not: SYSTEM_USER_ID } },
+      select: { id: true },
+    });
+
+    if (users.length === 0) {
+      console.log("ℹ️ No real users found.");
+      return res.status(200).json({ message: "No users to broadcast to.", status: true });
+    }
+
+    console.log(`📨 Sending original message from sender ${senderId} to ${users.length} users.`);
+
+    // Step 1: Send original message from sender to each user
+    for (const user of users) {
+      await prisma.messages.create({
+        data: {
+          senderId,
+          recieverId: user.id,
+          message,
+        },
+      });
+    }
+
+    // Step 2: Fetch bot replies and initialize generator
+    const botReplies = await prisma.botReply.findMany();
+    console.log(`💬 Loaded ${botReplies.length} bot replies from DB.`);
+    generateReplies.setReplies(botReplies);
+
+    // Step 3: Simulate bot responses from senderId 3 to 20
+    const allMessages = [];
+    const botCount = 18; // IDs 3 to 20 inclusive
+    const botSenderIds = Array.from({ length: botCount }, (_, i) => i + 3);
+
+    for (const botId of botSenderIds) {
+      for (const user of users) {
+        const reply = generateReplies.getReply()[0];
+        allMessages.push({
+          senderId: botId,
+          recieverId: user.id,
+          message: reply,
+        });
+      }
+    }
+
+    console.log(`🤖 Prepared ${allMessages.length} bot replies for ${users.length} users.`);
+
+    // Step 4: Insert messages in chunks
+    const CHUNK_SIZE = 13;
+    for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
+      const chunk = allMessages.slice(i, i + CHUNK_SIZE);
+      await prisma.messages.createMany({ data: chunk, skipDuplicates: false });
+      console.log(`✅ Inserted chunk ${i / CHUNK_SIZE + 1} of ${Math.ceil(allMessages.length / CHUNK_SIZE)} (${chunk.length} messages)`);
+    }
+
+    console.log("🎉 All messages sent.");
+    return res.status(200).json({ message: "Broadcasted.", status: true });
+
+  } catch (err) {
+    console.error("❌ Broadcast error:", err);
+    next(err);
+  }
+};
+
+
+
 export const onBoardUser = async (request, response, next) => {
   try {
     const {
