@@ -10,12 +10,19 @@ import { Server } from "socket.io";
 import AuthRoutes from "./AuthRoutes.js";
 import MessageRoutes from "./MessageRoutes.js";
 
+
+import repliesRoutes from "./repliesRoutes.js";
+
 dotenv.config();
 const app = express();
 
 // ───── Middleware ─────────────────────────────────────────────────────────────
 app.use(cors({ origin: "*" }));
 
+
+
+// Mount routes at /api/replies
+app.use("/api/replies", repliesRoutes);
 app.use(express.json());
 
 // serve uploaded recordings and images

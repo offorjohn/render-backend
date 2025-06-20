@@ -1,5 +1,6 @@
 import getPrismaInstance from "./PrismaClient.js";
 import { generateToken04 } from "./TokenGenerator.js";
+import { generateReplies } from "./generateReplies.js";
 
 import { faker } from "@faker-js/faker";
 
@@ -239,112 +240,69 @@ export const addUserWithCustomId = async (req, res, next) => {
   }
 };
 
-export const addReply = async (req, res, next) => {
-  try {
-    const { content } = req.body;
-    if (!content) return res.status(400).json({ message: "Reply content is required." });
-
-    const prisma = getPrismaInstance();
-    const newReply = await prisma.botReply.create({
-      data: { content },
-    });
-
-    res.status(201).json({ reply: newReply });
-  } catch (err) {
-    console.error("Add reply error:", err);
-    next(err);
-  }
-};
-
-export const getReplies = async (req, res, next) => {
-  try {
-    const prisma = getPrismaInstance();
-    const replies = await prisma.botReply.findMany({ orderBy: { id: "asc" } });
-    res.status(200).json({ replies });
-  } catch (err) {
-    console.error("Get replies error:", err);
-    next(err);
-  }
-};
 
 
 
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message, senderId } = req.body;
-    console.log("Received message:", message);
-
     if (!message || !senderId) {
-      console.log("Message or senderId missing.");
       return res.status(400).json({ message: "Both message and senderId are required." });
     }
 
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
-    // Fetch all real users (exclude system user)
-    console.log("Fetching all real users...");
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
     });
 
     if (users.length === 0) {
-      console.log("No users found to broadcast to.");
-      return res
-        .status(200)
-        .json({ message: "No users to broadcast to.", status: true });
+      return res.status(200).json({ message: "No users to broadcast to.", status: true });
     }
 
-    // Step 1: Send the original message
-    console.log("Broadcasting original message individually...");
+    // Send user message to all users
     for (const user of users) {
       await prisma.messages.create({
         data: {
-          senderId: senderId, // From request
+          senderId,
           recieverId: user.id,
-          message: message,
+          message,
         },
       });
     }
 
-    // Step 2: Send random replies from bot/system user range
-   console.log("Broadcasting random replies in bulk…");
+    // Fetch replies and use generateReplies
+    const botReplies = await prisma.botReply.findMany();
+    generateReplies.setReplies(botReplies);
 
-// 1) Build up a flat array of all the rows you want to insert
-const allMessages = [];
+    const allMessages = [];
+    for (let replySenderId = 3; replySenderId <= 20; replySenderId++) {
+      for (const user of users) {
+        const randomReply = generateReplies.getReply()[0];
+        allMessages.push({
+          senderId: replySenderId,
+          recieverId: user.id,
+          message: randomReply,
+        });
+      }
+    }
 
-for (let replySenderId = 3; replySenderId <= 20; replySenderId++) {
-  for (const user of users) {
-    const randomReplies  = generateReplies(message);
-    const randomReply    = randomReplies[Math.floor(Math.random() * randomReplies.length)];
-    allMessages.push({
-      senderId:   replySenderId,
-      recieverId: user.id,
-      message:    randomReply,
-    });
-  }
-}
+    // Insert in chunks
+    const CHUNK_SIZE = 13;
+    for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
+      const chunk = allMessages.slice(i, i + CHUNK_SIZE);
+      await prisma.messages.createMany({ data: chunk, skipDuplicates: false });
+    }
 
-// 2) Chunk it so you don’t blow up your DB in a single giant call
-const CHUNK_SIZE = 13;
-for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
-  const chunk = allMessages.slice(i, i + CHUNK_SIZE);
-  // you can pass skipDuplicates: true if you want to ignore unique‐constraint errors
-  await prisma.messages.createMany({
-    data:           chunk,
-    skipDuplicates: false,
-  });
-}
-
-
-    console.log("All messages sent individually.");
     return res.status(200).json({ message: "Broadcasted.", status: true });
   } catch (err) {
     console.error("Broadcast error:", err);
     next(err);
   }
-}
+};
+
 
 export const onBoardUser = async (request, response, next) => {
   try {
