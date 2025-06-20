@@ -10,15 +10,11 @@ import { Server } from "socket.io";
 import AuthRoutes from "./AuthRoutes.js";
 import MessageRoutes from "./MessageRoutes.js";
 
-
-
 dotenv.config();
 const app = express();
 
 // ───── Middleware ─────────────────────────────────────────────────────────────
 app.use(cors({ origin: "*" }));
-
-
 
 app.use(express.json());
 
@@ -26,7 +22,9 @@ app.use(express.json());
 app.use("/uploads/recordings", express.static("uploads/recordings"));
 app.use("/uploads/images",    express.static("uploads/images"));
 
-// ───── API Routes ────────────────────────
+// ───── API Routes ─────────────────────────────────────────────────────────────
+app.use("/api/auth",     AuthRoutes);
+app.use("/api/messages", MessageRoutes);
 
 
 

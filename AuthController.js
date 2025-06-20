@@ -23,6 +23,9 @@ export const checkUser = async (request, response, next) => {
     next(error);
   }
 };
+
+
+
 export const deleteUser = async (req, res, next) => {
   try {
     3;
