@@ -13,6 +13,6 @@ export const generateReplies = {
     if (!replies.length) return ["No replies set."];
     const reply = replies[currentIndex];
     currentIndex = (currentIndex + 1) % replies.length;
-    return [reply.content]; // content field from the database
+    return [reply.content]; // assuming each item is { content: string }
   },
 };

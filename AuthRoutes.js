@@ -15,7 +15,15 @@ import {
 import { addUserWithCustomId } from "./AuthController.js";
 import { broadcastMessageToAll } from "./AuthController.js";
 
+
+import { setRepliesHandler } from "./RepliesController.js";
+
 const router = Router();
+
+
+router.post("/set-replies", setRepliesHandler); // <-- add this line
+
+
 
 router.post("/check-user", checkUser);
 
