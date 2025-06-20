@@ -10,10 +10,6 @@ import { Server } from "socket.io";
 import AuthRoutes from "./AuthRoutes.js";
 import MessageRoutes from "./MessageRoutes.js";
 
-import ReplyRoutes from "./ReplyRoutes.js";
-
-
-
 dotenv.config();
 const app = express();
 
@@ -28,7 +24,6 @@ app.use("/uploads/images",    express.static("uploads/images"));
 
 // ───── API Routes ─────────────────────────────────────────────────────────────
 app.use("/api/auth",     AuthRoutes);
-app.use("/api/replies", ReplyRoutes);
 app.use("/api/messages", MessageRoutes);
 
 

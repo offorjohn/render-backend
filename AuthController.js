@@ -239,29 +239,34 @@ export const addUserWithCustomId = async (req, res, next) => {
   }
 };
 
-const generateReplies = (() => {
-  let replies = []; // no hardcoded replies
-  let currentIndex = 0;
+export const addReply = async (req, res, next) => {
+  try {
+    const { content } = req.body;
+    if (!content) return res.status(400).json({ message: "Reply content is required." });
 
-  const setReplies = (newReplies) => {
-    if (Array.isArray(newReplies)) {
-      replies = newReplies;
-      currentIndex = 0; // reset index
-    }
-  };
+    const prisma = getPrismaInstance();
+    const newReply = await prisma.botReply.create({
+      data: { content },
+    });
 
-  const getReply = (message) => {
-    if (!replies.length) return ["No replies set."];
-    const reply = replies[currentIndex];
-    currentIndex = (currentIndex + 1) % replies.length;
-    return [reply];
-  };
+    res.status(201).json({ reply: newReply });
+  } catch (err) {
+    console.error("Add reply error:", err);
+    next(err);
+  }
+};
 
-  return {
-    setReplies,
-    getReply
-  };
-})();
+export const getReplies = async (req, res, next) => {
+  try {
+    const prisma = getPrismaInstance();
+    const replies = await prisma.botReply.findMany({ orderBy: { id: "asc" } });
+    res.status(200).json({ replies });
+  } catch (err) {
+    console.error("Get replies error:", err);
+    next(err);
+  }
+};
+
 
 
 export const broadcastMessageToAll = async (req, res, next) => {
