@@ -18,14 +18,18 @@ import { broadcastMessageToAll } from "./AuthController.js";
 
 import { setRepliesHandler } from "./RepliesController.js";
 
+
+
 const router = Router();
+
+router.post("/check-user", checkUser);
+
 
 
 router.post("/set-replies", setRepliesHandler); // <-- add this line
 
 
 
-router.post("/check-user", checkUser);
 
 router.post("/message/broadcast", broadcastMessageToAll);
 

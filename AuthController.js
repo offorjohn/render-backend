@@ -5,7 +5,6 @@ import { generateReplies } from "./generateReplies.js";
 import { faker } from "@faker-js/faker";
 
 
-
 export const checkUser = async (request, response, next) => {
   try {
     const { email } = request.body;
@@ -23,7 +22,6 @@ export const checkUser = async (request, response, next) => {
     next(error);
   }
 };
-
 
 
 export const deleteUser = async (req, res, next) => {
