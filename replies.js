@@ -1,6 +1,9 @@
+
+import getPrismaInstance from "./PrismaClient.js";
 // controllers/replies.js
 export const addReply = async (req, res, next) => {
   try {
+    console.log("Incoming body:", req.body); // ← debug
     const { content } = req.body;
     if (!content) return res.status(400).json({ message: "Reply content is required." });
 
@@ -15,6 +18,7 @@ export const addReply = async (req, res, next) => {
     next(err);
   }
 };
+
 export const getReplies = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();

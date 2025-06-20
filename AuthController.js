@@ -77,7 +77,7 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
 
     const arrayOfUserObjects = [];
 
-    for (let i = 1; i < 1000; i++) {
+    for (let i = 1; i < 10; i++) {
       const id = startingId + i;
       const email = `user${id}@example.com`;
       const numbers = [
