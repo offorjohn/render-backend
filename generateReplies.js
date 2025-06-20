@@ -5,7 +5,9 @@ let currentIndex = 0;
 export const generateReplies = {
   setReplies: (newReplies) => {
     if (Array.isArray(newReplies)) {
-      replies = newReplies;
+      replies = newReplies.map(reply =>
+        typeof reply === "string" ? { content: reply } : reply
+      );
       currentIndex = 0;
     }
   },
@@ -13,6 +15,6 @@ export const generateReplies = {
     if (!replies.length) return ["No replies set."];
     const reply = replies[currentIndex];
     currentIndex = (currentIndex + 1) % replies.length;
-    return [reply.content]; // assuming each item is { content: string }
+    return [reply.content]; // safely return the string
   },
 };

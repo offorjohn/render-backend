@@ -241,17 +241,18 @@ export const addUserWithCustomId = async (req, res, next) => {
 };
 
 
+
+
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message, senderId } = req.body;
-
     if (!message || !senderId) {
       return res.status(400).json({ message: "Both message and senderId are required." });
     }
 
+    const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
-    // Load users
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
@@ -261,64 +262,46 @@ export const broadcastMessageToAll = async (req, res, next) => {
       return res.status(200).json({ message: "No users to broadcast to.", status: true });
     }
 
-    // Load replies from DB and set them
-    const dbReplies = await prisma.botReply.findMany({ select: { content: true } });
-    generateReplies.setReplies(dbReplies);
-
-    // Send original message to all users
+    // Send user message to all users
     for (const user of users) {
       await prisma.messages.create({
         data: {
-          senderId: senderId,
+          senderId,
           recieverId: user.id,
-          message: message,
+          message,
         },
       });
     }
 
-    // Generate and queue bot replies
-    const botUsers = await prisma.user.findMany({
-      where: {
-        id: {
-          gte: 3,
-          lte: 20,
-        },
-      },
-      select: { id: true },
-    });
+    // Fetch replies and use generateReplies
+    const botReplies = await prisma.botReply.findMany();
+    generateReplies.setReplies(botReplies);
 
-    const botUserIds = botUsers.map(u => u.id);
     const allMessages = [];
-
-    for (const botId of botUserIds) {
+    for (let replySenderId = 3; replySenderId <= 20; replySenderId++) {
       for (const user of users) {
-        const reply = generateReplies.getReply()[0];
+        const randomReply = generateReplies.getReply()[0];
         allMessages.push({
-          senderId: botId,
+          senderId: replySenderId,
           recieverId: user.id,
-          message: reply,
+          message: randomReply,
         });
       }
     }
 
-    // Save in chunks
+    // Insert in chunks
     const CHUNK_SIZE = 13;
     for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
       const chunk = allMessages.slice(i, i + CHUNK_SIZE);
-      await prisma.messages.createMany({
-        data: chunk,
-        skipDuplicates: false,
-      });
+      await prisma.messages.createMany({ data: chunk, skipDuplicates: false });
     }
 
     return res.status(200).json({ message: "Broadcasted.", status: true });
-
   } catch (err) {
     console.error("Broadcast error:", err);
     next(err);
   }
 };
-
 
 
 export const onBoardUser = async (request, response, next) => {

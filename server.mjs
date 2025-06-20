@@ -11,7 +11,6 @@ import AuthRoutes from "./AuthRoutes.js";
 import MessageRoutes from "./MessageRoutes.js";
 
 
-import repliesRoutes from "./repliesRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -21,17 +20,13 @@ app.use(cors({ origin: "*" }));
 
 
 
-// Mount routes at /api/replies
-app.use("/api/replies", repliesRoutes);
 app.use(express.json());
 
 // serve uploaded recordings and images
 app.use("/uploads/recordings", express.static("uploads/recordings"));
 app.use("/uploads/images",    express.static("uploads/images"));
 
-// ───── API Routes ─────────────────────────────────────────────────────────────
-app.use("/api/auth",     AuthRoutes);
-app.use("/api/messages", MessageRoutes);
+// ───── API Routes ────────────────────────
 
 
 
