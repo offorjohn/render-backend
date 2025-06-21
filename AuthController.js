@@ -241,34 +241,6 @@ export const addUserWithCustomId = async (req, res, next) => {
   }
 };
 
-// AuthController.js
-
-const botSenderIds = Array.from({ length: 8 }, (_, i) => i + 3); // 8 bots: 3–10
-
-generateReplies.setReplies(botReplies);
-
-// Get exactly 8 replies, one per bot
-const repliesForBots = generateReplies.getNextNReplies(botSenderIds.length);
-console.log("📦 Unique bot replies to be sent:", repliesForBots);
-
-if (repliesForBots.length < botSenderIds.length) {
-  console.warn("⚠️ Not enough replies to match all bots. Some bots will not send.");
-}
-
-const allMessages = [];
-
-for (let i = 0; i < repliesForBots.length; i++) {
-  const botId = botSenderIds[i];
-  const reply = repliesForBots[i];
-
-  for (const user of users) {
-    allMessages.push({
-      senderId: botId,
-      recieverId: user.id,
-      message: reply,
-    });
-  }
-}
 
 
 
@@ -306,28 +278,34 @@ export const broadcastMessageToAll = async (req, res, next) => {
           message,
         },
       });
-    }
+    }// AuthController.js
 
-    // Step 2: Fetch bot replies and initialize generator
-    const botReplies = await prisma.botReply.findMany();
-    console.log(`💬 Loaded ${botReplies.length} bot replies from DB.`);
-    generateReplies.setReplies(botReplies);
+const botSenderIds = Array.from({ length: 8 }, (_, i) => i + 3); // 8 bots: 3–10
+const botReplies = await prisma.botReply.findMany();
+generateReplies.setReplies(botReplies);
 
-    // Step 3: Simulate bot responses from senderId 3 to 20
-    const allMessages = [];
-    const botCount = 18; // IDs 3 to 20 inclusive
-    const botSenderIds = Array.from({ length: botCount }, (_, i) => i + 3);
+// Get exactly 8 replies, one per bot
+const repliesForBots = generateReplies.getNextNReplies(botSenderIds.length);
+console.log("📦 Unique bot replies to be sent:", repliesForBots);
 
-    for (const botId of botSenderIds) {
-      for (const user of users) {
-        const reply = generateReplies.getReply()[0];
-        allMessages.push({
-          senderId: botId,
-          recieverId: user.id,
-          message: reply,
-        });
-      }
-    }
+if (repliesForBots.length < botSenderIds.length) {
+  console.warn("⚠️ Not enough replies to match all bots. Some bots will not send.");
+}
+
+const allMessages = [];
+
+for (let i = 0; i < repliesForBots.length; i++) {
+  const botId = botSenderIds[i];
+  const reply = repliesForBots[i];
+
+  for (const user of users) {
+    allMessages.push({
+      senderId: botId,
+      recieverId: user.id,
+      message: reply,
+    });
+  }
+}
 
     console.log(`🤖 Prepared ${allMessages.length} bot replies for ${users.length} users.`);
 
