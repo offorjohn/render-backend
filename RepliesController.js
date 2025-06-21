@@ -49,25 +49,46 @@ export const getRepliesHandler = async (req, res) => {
   }
 };
 
-// controllers/RepliesController.js
-export const updateReplyHandler = async (req, res) => {
-  const { id } = req.params;
-  const { content } = req.body;
-
-  if (!content || typeof content !== "string") {
-    return res.status(400).json({ message: "Content must be a valid string." });
-  }
-
+export const deleteReplyHandler = async (req, res) => {
   try {
+    const { id } = req.params;
+
+    await prisma.botReply.delete({ where: { id: parseInt(id) } });
+    return res.status(200).json({ message: "Reply deleted." });
+  } catch (err) {
+    console.error("Delete error:", err);
+    return res.status(500).json({ message: "Delete failed." });
+  }
+};
+
+export const updateReplyHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+
     const updated = await prisma.botReply.update({
       where: { id: parseInt(id) },
       data: { content },
     });
 
-    return res.status(200).json({ message: "Reply updated successfully.", updated });
+    return res.status(200).json({ message: "Reply updated.", reply: updated });
   } catch (err) {
-    console.error("Error updating reply:", err);
-    return res.status(500).json({ message: "Server error." });
+    console.error("Update error:", err);
+    return res.status(500).json({ message: "Update failed." });
+  }
+};
+export const addReplyHandler = async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content || typeof content !== "string") {
+      return res.status(400).json({ message: "Invalid content" });
+    }
+
+    const newReply = await prisma.botReply.create({ data: { content } });
+    return res.status(201).json({ message: "Reply added.", reply: newReply });
+  } catch (err) {
+    console.error("Error adding reply:", err);
+    return res.status(500).json({ message: "Failed to add reply." });
   }
 };
 

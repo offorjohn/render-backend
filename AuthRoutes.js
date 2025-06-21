@@ -21,6 +21,8 @@ import {
   setRepliesHandler,
   getRepliesHandler,
   updateReplyHandler,
+    addReplyHandler,
+  deleteReplyHandler,
 } from "./RepliesController.js";
 
 
@@ -31,12 +33,14 @@ router.post("/check-user", checkUser);
 
 
 
+router.post("/add-reply", addReplyHandler);              // ✅ NEW: stack replies
 
 
 router.get("/get-replies", getRepliesHandler);       // fetch
 router.post("/set-replies", setRepliesHandler);      // create
 router.put("/update-reply/:id", updateReplyHandler); // update ✅
 
+router.delete("/delete-reply/:id", deleteReplyHandler);
 
 
 router.post("/message/broadcast", broadcastMessageToAll);
