@@ -37,7 +37,7 @@ export const setRepliesHandler = async (req, res) => {
 // RepliesController.js
 
 export const getRepliesHandler = async (req, res) => {
-  const prisma = getPrismaInstance();
+
   try {
     const replies = await prisma.botReply.findMany({
       orderBy: { id: "asc" },
@@ -48,4 +48,27 @@ export const getRepliesHandler = async (req, res) => {
     res.status(500).json({ error: "Failed to load replies" });
   }
 };
+
+// controllers/RepliesController.js
+export const updateReplyHandler = async (req, res) => {
+  const { id } = req.params;
+  const { content } = req.body;
+
+  if (!content || typeof content !== "string") {
+    return res.status(400).json({ message: "Content must be a valid string." });
+  }
+
+  try {
+    const updated = await prisma.botReply.update({
+      where: { id: parseInt(id) },
+      data: { content },
+    });
+
+    return res.status(200).json({ message: "Reply updated successfully.", updated });
+  } catch (err) {
+    console.error("Error updating reply:", err);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
 

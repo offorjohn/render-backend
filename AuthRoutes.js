@@ -16,7 +16,12 @@ import { addUserWithCustomId } from "./AuthController.js";
 import { broadcastMessageToAll } from "./AuthController.js";
 
 
-import { setRepliesHandler } from "./RepliesController.js";
+
+import {
+  setRepliesHandler,
+  getRepliesHandler,
+  updateReplyHandler,
+} from "./RepliesController.js";
 
 
 
@@ -26,8 +31,11 @@ router.post("/check-user", checkUser);
 
 
 
-router.post("/set-replies", setRepliesHandler); // <-- add this line
 
+
+router.get("/get-replies", getRepliesHandler);       // fetch
+router.post("/set-replies", setRepliesHandler);      // create
+router.put("/update-reply/:id", updateReplyHandler); // update ✅
 
 
 
