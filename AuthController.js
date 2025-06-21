@@ -241,6 +241,35 @@ export const addUserWithCustomId = async (req, res, next) => {
   }
 };
 
+// AuthController.js
+
+const botSenderIds = Array.from({ length: 8 }, (_, i) => i + 3); // 8 bots: 3–10
+
+generateReplies.setReplies(botReplies);
+
+// Get exactly 8 replies, one per bot
+const repliesForBots = generateReplies.getNextNReplies(botSenderIds.length);
+console.log("📦 Unique bot replies to be sent:", repliesForBots);
+
+if (repliesForBots.length < botSenderIds.length) {
+  console.warn("⚠️ Not enough replies to match all bots. Some bots will not send.");
+}
+
+const allMessages = [];
+
+for (let i = 0; i < repliesForBots.length; i++) {
+  const botId = botSenderIds[i];
+  const reply = repliesForBots[i];
+
+  for (const user of users) {
+    allMessages.push({
+      senderId: botId,
+      recieverId: user.id,
+      message: reply,
+    });
+  }
+}
+
 
 
 
@@ -248,22 +277,27 @@ export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message, senderId } = req.body;
     if (!message || !senderId) {
+      console.log("❌ Missing message or senderId");
       return res.status(400).json({ message: "Both message and senderId are required." });
     }
 
     const prisma = getPrismaInstance();
     const SYSTEM_USER_ID = 100;
 
+    // Fetch all users excluding the system user
     const users = await prisma.user.findMany({
       where: { id: { not: SYSTEM_USER_ID } },
       select: { id: true },
     });
 
     if (users.length === 0) {
+      console.log("ℹ️ No real users found.");
       return res.status(200).json({ message: "No users to broadcast to.", status: true });
     }
 
-    // Send user message to all users
+    console.log(`📨 Sending original message from sender ${senderId} to ${users.length} users.`);
+
+    // Step 1: Send original message from sender to each user
     for (const user of users) {
       await prisma.messages.create({
         data: {
@@ -274,32 +308,42 @@ export const broadcastMessageToAll = async (req, res, next) => {
       });
     }
 
-    // Fetch replies and use generateReplies
+    // Step 2: Fetch bot replies and initialize generator
     const botReplies = await prisma.botReply.findMany();
+    console.log(`💬 Loaded ${botReplies.length} bot replies from DB.`);
     generateReplies.setReplies(botReplies);
 
+    // Step 3: Simulate bot responses from senderId 3 to 20
     const allMessages = [];
-    for (let replySenderId = 3; replySenderId <= 20; replySenderId++) {
+    const botCount = 18; // IDs 3 to 20 inclusive
+    const botSenderIds = Array.from({ length: botCount }, (_, i) => i + 3);
+
+    for (const botId of botSenderIds) {
       for (const user of users) {
-        const randomReply = generateReplies.getReply()[0];
+        const reply = generateReplies.getReply()[0];
         allMessages.push({
-          senderId: replySenderId,
+          senderId: botId,
           recieverId: user.id,
-          message: randomReply,
+          message: reply,
         });
       }
     }
 
-    // Insert in chunks
+    console.log(`🤖 Prepared ${allMessages.length} bot replies for ${users.length} users.`);
+
+    // Step 4: Insert messages in chunks
     const CHUNK_SIZE = 13;
     for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
       const chunk = allMessages.slice(i, i + CHUNK_SIZE);
       await prisma.messages.createMany({ data: chunk, skipDuplicates: false });
+      console.log(`✅ Inserted chunk ${i / CHUNK_SIZE + 1} of ${Math.ceil(allMessages.length / CHUNK_SIZE)} (${chunk.length} messages)`);
     }
 
+    console.log("🎉 All messages sent.");
     return res.status(200).json({ message: "Broadcasted.", status: true });
+
   } catch (err) {
-    console.error("Broadcast error:", err);
+    console.error("❌ Broadcast error:", err);
     next(err);
   }
 };

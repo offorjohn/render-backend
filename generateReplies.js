@@ -11,10 +11,28 @@ export const generateReplies = {
       currentIndex = 0;
     }
   },
+
   getReply: () => {
-    if (!replies.length) return ["No replies set."];
+    if (!replies.length || currentIndex >= replies.length) return ["No replies left."];
     const reply = replies[currentIndex];
-    currentIndex = (currentIndex + 1) % replies.length;
-    return [reply.content]; // safely return the string
+    currentIndex++;
+    return [reply.content];
   },
+
+  getNextNReplies: (n) => {
+    const result = [];
+    for (let i = 0; i < n; i++) {
+      if (currentIndex < replies.length) {
+        result.push(replies[currentIndex].content);
+        currentIndex++;
+      } else {
+        break; // no more unique replies
+      }
+    }
+    return result;
+  },
+
+  reset: () => {
+    currentIndex = 0;
+  }
 };
