@@ -33,3 +33,19 @@ export const setRepliesHandler = async (req, res) => {
     return res.status(500).json({ message: "Server error." });
   }
 };
+
+// RepliesController.js
+
+export const getRepliesHandler = async (req, res) => {
+  const prisma = getPrismaInstance();
+  try {
+    const replies = await prisma.botReply.findMany({
+      orderBy: { id: "asc" },
+    });
+    res.status(200).json({ replies });
+  } catch (err) {
+    console.error("Failed to fetch replies:", err);
+    res.status(500).json({ error: "Failed to load replies" });
+  }
+};
+
