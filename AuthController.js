@@ -211,8 +211,9 @@ export const broadcastMessageToAll = async (req, res, next) => {
         },
       });
     }// AuthController.js
+const botCount = Math.min(Math.max(parseInt(req.body.botCount || 8), 1), 100); // Allow 1 to 100 bots max
+const botSenderIds = Array.from({ length: botCount }, (_, i) => i + 3);
 
-const botSenderIds = Array.from({ length: 8 }, (_, i) => i + 3); // 8 bots: 3–10
 const botReplies = await prisma.botReply.findMany();
 generateReplies.setReplies(botReplies);
 
