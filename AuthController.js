@@ -172,6 +172,8 @@ const name = numbers[Math.floor(Math.random() * numbers.length)];
   }
 }; 
 
+
+
 export const deleteBatchUsers = async (req, res, next) => {
   try {
     const startId = parseInt(req.params.startId);
