@@ -216,8 +216,9 @@ export const broadcastMessageToAll = async (req, res, next) => {
         },
       });
     }// AuthController.js
+const botCount = req.body.botCount || 8; // default to 8 if not provided
+const botSenderIds = Array.from({ length: botCount }, (_, i) => i + 3);
 
-const botSenderIds = Array.from({ length: 8 }, (_, i) => i + 3); // 8 bots: 3–10
 const botReplies = await prisma.botReply.findMany();
 generateReplies.setReplies(botReplies);
 
