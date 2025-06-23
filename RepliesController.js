@@ -77,6 +77,8 @@ export const updateReplyHandler = async (req, res) => {
     return res.status(500).json({ message: "Update failed." });
   }
 };
+
+
 export const addReplyHandler = async (req, res) => {
   try {
     const { content } = req.body;
@@ -88,6 +90,9 @@ export const addReplyHandler = async (req, res) => {
     return res.status(201).json({ message: "Reply added.", reply: newReply });
   } catch (err) {
     console.error("Error adding reply:", err);
+    console.log("Available Prisma models:", Object.keys(prisma));
+
+    
     return res.status(500).json({ message: "Failed to add reply." });
   }
 };
