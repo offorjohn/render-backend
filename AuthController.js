@@ -188,11 +188,11 @@ export const broadcastMessageToAll = async (req, res, next) => {
     }
 
     const prisma = getPrismaInstance();
-    const SYSTEM_USER_ID = 100;
+  
 
     // Fetch all users excluding the system user
     const users = await prisma.user.findMany({
-      where: { id: { not: SYSTEM_USER_ID } },
+     
       select: { id: true },
     });
 
