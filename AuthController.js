@@ -177,87 +177,90 @@ export const addUserWithCustomId = async (req, res, next) => {
     next(err);
   }
 };
-
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
     const { message, senderId, botCount: rawBotCount, botDelays: rawBotDelays } = req.body;
 
     if (!message || !senderId) {
-      console.log("❌ Missing message or senderId");
       return res.status(400).json({ message: "Both message and senderId are required." });
     }
 
     const prisma = getPrismaInstance();
 
-    // Fetch all users (you can exclude SYSTEM_USER_ID here if needed)
     const users = await prisma.user.findMany({
       select: { id: true },
     });
 
-    if (users.length === 0) {
-      console.log("ℹ️ No real users found.");
-      return res.status(200).json({ message: "No users to broadcast to.", status: true });
+    if (!users.length) {
+      return res.status(200).json({ message: "No users to broadcast to." });
     }
 
-    // Step 1: Send original message from sender to each user
-    for (const user of users) {
-      await prisma.messages.create({
-        data: {
-          senderId,
-          recieverId: user.id,
-          message,
-        },
-      });
-    }
+    // Send original message to users
+    await Promise.all(
+      users.map(user =>
+        prisma.messages.create({
+          data: {
+            senderId,
+            recieverId: user.id,
+            message,
+          },
+        })
+      )
+    );
 
-    // Step 2: Setup bots
-    const botCount = Math.min(Math.max(parseInt(rawBotCount || 8), 1), 100); // between 1 and 100
+    const botCount = Math.min(Math.max(parseInt(rawBotCount || 8), 1), 100);
     const botDelays = Array.isArray(rawBotDelays)
-      ? rawBotDelays.map(d => parseInt(d, 10) || 0)
+      ? rawBotDelays.map((d) => parseInt(d, 10) || 0)
       : [];
 
-    const botSenderIds = Array.from({ length: botCount }, (_, i) => i + 3); // e.g. bot IDs: 3, 4, 5...
+    const botSenderIds = Array.from({ length: botCount }, (_, i) => i + 3);
 
     const botReplies = await prisma.botReply.findMany();
     generateReplies.setReplies(botReplies);
-
     const repliesForBots = generateReplies.getNextNReplies(botSenderIds.length);
 
-    if (repliesForBots.length < botSenderIds.length) {
-      console.warn("⚠️ Not enough replies to match all bots. Some bots will not send.");
-    }
+    // 🔄 Run bots in parallel
+    const botTasks = botSenderIds.map((botId, index) => {
+      const delay = botDelays[index] || 0;
+      const reply = repliesForBots[index];
 
-    // Step 3: Send bot replies with delay per bot
-    for (let i = 0; i < repliesForBots.length; i++) {
-      const botId = botSenderIds[i];
-      const reply = repliesForBots[i];
+      return new Promise((resolve) => {
+        setTimeout(async () => {
+          if (!reply) {
+            console.warn(`⚠️ No reply found for bot ${botId}`);
+            return resolve();
+          }
 
-      const delay = botDelays[i] || 0;
-      if (delay > 0) {
-        console.log(`⏳ Waiting ${delay}ms before bot ${botId} sends messages...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
+          const botMessages = users.map((user) => ({
+            senderId: botId,
+            recieverId: user.id,
+            message: reply,
+          }));
 
-      const botMessages = users.map(user => ({
-        senderId: botId,
-        recieverId: user.id,
-        message: reply,
-      }));
+          try {
+            await prisma.messages.createMany({
+              data: botMessages,
+              skipDuplicates: false,
+            });
 
-      await prisma.messages.createMany({ data: botMessages, skipDuplicates: false });
+            console.log(`🤖 Bot ${botId} sent messages after ${delay}ms`);
+          } catch (err) {
+            console.error(`❌ Failed to send from bot ${botId}:`, err);
+          }
 
-      console.log(`🤖 Bot ${botId} sent messages to all users.`);
-    }
+          resolve();
+        }, delay);
+      });
+    });
 
-    console.log("🎉 All messages sent.");
+    await Promise.all(botTasks);
+
     return res.status(200).json({ message: "Broadcasted.", status: true });
-
   } catch (err) {
     console.error("❌ Broadcast error:", err);
     next(err);
   }
 };
-
 
 export const onBoardUser = async (request, response, next) => {
   try {
