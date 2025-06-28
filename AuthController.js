@@ -178,21 +178,19 @@ export const addUserWithCustomId = async (req, res, next) => {
   }
 };
 
-
 export const broadcastMessageToAll = async (req, res, next) => {
   try {
-    const { message, senderId } = req.body;
+    const { message, senderId, botCount: rawBotCount, botDelays: rawBotDelays } = req.body;
+
     if (!message || !senderId) {
       console.log("❌ Missing message or senderId");
       return res.status(400).json({ message: "Both message and senderId are required." });
     }
 
     const prisma = getPrismaInstance();
-  
 
-    // Fetch all users excluding the system user
+    // Fetch all users (you can exclude SYSTEM_USER_ID here if needed)
     const users = await prisma.user.findMany({
-     
       select: { id: true },
     });
 
@@ -210,42 +208,45 @@ export const broadcastMessageToAll = async (req, res, next) => {
           message,
         },
       });
-    }// AuthController.js
-const botCount = Math.min(Math.max(parseInt(req.body.botCount || 8), 1), 100); // Allow 1 to 100 bots max
-const botSenderIds = Array.from({ length: botCount }, (_, i) => i + 3);
+    }
 
-const botReplies = await prisma.botReply.findMany();
-generateReplies.setReplies(botReplies);
+    // Step 2: Setup bots
+    const botCount = Math.min(Math.max(parseInt(rawBotCount || 8), 1), 100); // between 1 and 100
+    const botDelays = Array.isArray(rawBotDelays)
+      ? rawBotDelays.map(d => parseInt(d, 10) || 0)
+      : [];
 
-// Get exactly 8 replies, one per bot
-const repliesForBots = generateReplies.getNextNReplies(botSenderIds.length);
-console.log("📦 Unique bot replies to be sent:", repliesForBots);
+    const botSenderIds = Array.from({ length: botCount }, (_, i) => i + 3); // e.g. bot IDs: 3, 4, 5...
 
-if (repliesForBots.length < botSenderIds.length) {
-  console.warn("⚠️ Not enough replies to match all bots. Some bots will not send.");
-}
+    const botReplies = await prisma.botReply.findMany();
+    generateReplies.setReplies(botReplies);
 
-const allMessages = [];
+    const repliesForBots = generateReplies.getNextNReplies(botSenderIds.length);
 
-for (let i = 0; i < repliesForBots.length; i++) {
-  const botId = botSenderIds[i];
-  const reply = repliesForBots[i];
+    if (repliesForBots.length < botSenderIds.length) {
+      console.warn("⚠️ Not enough replies to match all bots. Some bots will not send.");
+    }
 
-  for (const user of users) {
-    allMessages.push({
-      senderId: botId,
-      recieverId: user.id,
-      message: reply,
-    });
-  }
-}
+    // Step 3: Send bot replies with delay per bot
+    for (let i = 0; i < repliesForBots.length; i++) {
+      const botId = botSenderIds[i];
+      const reply = repliesForBots[i];
 
+      const delay = botDelays[i] || 0;
+      if (delay > 0) {
+        console.log(`⏳ Waiting ${delay}ms before bot ${botId} sends messages...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
 
-    // Step 4: Insert messages in chunks
-    const CHUNK_SIZE = 13;
-    for (let i = 0; i < allMessages.length; i += CHUNK_SIZE) {
-      const chunk = allMessages.slice(i, i + CHUNK_SIZE);
-      await prisma.messages.createMany({ data: chunk, skipDuplicates: false });
+      const botMessages = users.map(user => ({
+        senderId: botId,
+        recieverId: user.id,
+        message: reply,
+      }));
+
+      await prisma.messages.createMany({ data: botMessages, skipDuplicates: false });
+
+      console.log(`🤖 Bot ${botId} sent messages to all users.`);
     }
 
     console.log("🎉 All messages sent.");
@@ -255,7 +256,7 @@ for (let i = 0; i < repliesForBots.length; i++) {
     console.error("❌ Broadcast error:", err);
     next(err);
   }
-}; 
+};
 
 
 export const onBoardUser = async (request, response, next) => {
