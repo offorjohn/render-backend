@@ -69,29 +69,25 @@ export const addUser = async (req, res, next) => {
     next(err);
   }
 };
-
-
 export const addTenUsersWithCustomIds = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
-
     const { startingId = 1, contacts = [] } = req.body;
 
     if (!contacts.length) {
       return res.status(400).json({ error: "No contacts provided." });
     }
 
-    const arrayOfUserObjects = contacts.map((nameOrNumber, index) => {
+    const arrayOfUserObjects = contacts.map((contact, index) => {
       const id = startingId + index;
-      const email = `user${id}@example.com`;
-      const profilePicture = `/avatars/${Math.floor(Math.random() * 1000) + 1}.png`;
 
       return {
         id,
-        email,
-        name: nameOrNumber,
-        profilePicture,
-        about: "",
+        email: contact.email || `user${id}@example.com`,
+        name: contact.name,
+        phoneNumber: contact.phoneNumber || null,
+        profilePicture: contact.profilePicture || `/avatars/default.png`,
+        about: contact.about || "",
       };
     });
 
@@ -107,7 +103,6 @@ export const addTenUsersWithCustomIds = async (req, res, next) => {
     next(err);
   }
 };
-
 
 export const deleteBatchUsers = async (req, res, next) => {
   try {
